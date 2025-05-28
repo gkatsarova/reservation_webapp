@@ -14,12 +14,18 @@ reservation_model = ns.model('Reservation', {
     'notes': fields.String(description='Options or special requests'),
 })
 
+reservation_response = ns.model('ReservationResponse', {
+    'message': fields.String,
+    'id': fields.Integer
+})
+
 status_model = ns.model('StatusUpdate', {
     'status': fields.String(required=True, enum=[s.value for s in ReservationStatus], description='New status of the reservation')
 })
 
 @ns.route('/')
 class ReservationList(Resource):
+    @ns.doc(security='Bearer')
     @jwt_required()
     @ns.marshal_list_with(reservation_model)
     def get(self):
@@ -27,6 +33,7 @@ class ReservationList(Resource):
         user = User.query.get(current_user['id'])
         return user.reservations
 
+    @ns.doc(security='Bearer')
     @jwt_required()
     @ns.expect(reservation_model)
     @ns.response(201, 'The reservation has been created')
@@ -71,6 +78,7 @@ class ReservationList(Resource):
 
 @ns.route('/<int:reservation_id>/status')
 class ReservationStatusUpdate(Resource):
+    @ns.doc(security='Bearer')
     @jwt_required()
     @ns.expect(status_model)
     @ns.response(200, 'Staus updated successfully')
@@ -91,6 +99,7 @@ class ReservationStatusUpdate(Resource):
 
 @ns.route('/venue/<int:venue_id>')
 class VenueReservations(Resource):
+    @ns.doc(security='Bearer')
     @jwt_required()
     @ns.marshal_list_with(reservation_model)
     def get(self, venue_id):

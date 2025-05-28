@@ -12,12 +12,13 @@ api = Api(
     version='1.0',
     description='API for managing restaurant reservations',
     doc='/swagger/', 
-    prefix='/api',
+    prefix='/api',   
     authorizations={
         'Bearer': {
             'type': 'apiKey',
             'in': 'header',
-            'name': 'Authorization'
+            'name': 'Authorization',
+            'description': 'Add "Bearer &lt;your token&gt;"'
         }
     }
 )

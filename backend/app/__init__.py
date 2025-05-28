@@ -1,6 +1,8 @@
 from flask import Flask
 from .config import Config
 from .extensions import db, jwt, api, migrate
+from .routes.health import health_bp
+from flask_cors import CORS
 
 def create_app():
     app = Flask(__name__)
@@ -18,5 +20,9 @@ def create_app():
     api.add_namespace(auth_ns)
     api.add_namespace(venues_ns)
     api.add_namespace(reservations_ns)
+
+    app.register_blueprint(health_bp)
+
+    CORS(app)
 
     return app

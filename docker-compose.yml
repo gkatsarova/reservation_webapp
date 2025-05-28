@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   db:
     image: postgres:13
@@ -14,23 +16,32 @@ services:
 
   backend:
     build: ./backend
+    env_file: .env
     volumes:
       - ./backend:/app
-    env_file: .env
     depends_on:
       db:
         condition: service_healthy
     networks:
       - app-network
-
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "5000:5000" 
+    command: /bin/sh -c "flask db upgrade && gunicorn --bind 0.0.0.0:5000 'app:create_app()'"
   frontend:
     build: ./frontend
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - app-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:

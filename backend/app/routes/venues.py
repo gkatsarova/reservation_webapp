@@ -17,6 +17,11 @@ venue_model = ns.model('Venue', {
     'menu_image_url': fields.String(description='URL for menu image'),
 })
 
+venue_response = ns.model('VenueResponse', {
+    'message': fields.String,
+    'id': fields.Integer
+})
+
 def validate_hours(hours_str):
     try:
         start, end = hours_str.split('-')
@@ -33,8 +38,10 @@ def validate_hours(hours_str):
 
 @ns.route('/')
 class VenueList(Resource):
+    @ns.doc(security='Bearer')
     @jwt_required()
     @ns.marshal_list_with(venue_model)
+    @ns.response(200, 'List of venues returned')
     def get(self):
         current_user_id = get_jwt_identity()
         print(f"Current user id (get): {current_user_id}") 
@@ -49,8 +56,12 @@ class VenueList(Resource):
         venues = Venue.query.filter_by(owner_id=user.id).all()
         return venues
 
+    @ns.doc(security='Bearer')
     @jwt_required()
     @ns.expect(venue_model)
+    @ns.response(201, 'Venue created successfully', venue_response)
+    @ns.response(400, 'Missing or invalid fields')
+    @ns.response(403, 'Not authorized')
     def post(self):
         current_user_id = get_jwt_identity()
         print(f"Current user id (post): {current_user_id}")
@@ -99,7 +110,11 @@ class VenueList(Resource):
 
 @ns.route('/<int:venue_id>')
 class VenueDetail(Resource):
+    @ns.doc(security='Bearer')
     @jwt_required()
+    @ns.response(200, 'Venue deleted')
+    @ns.response(403, 'No permission')
+    @ns.response(404, 'Venue not found')
     def delete(self, venue_id):
         current_user_id = get_jwt_identity()
         print(f"Current user id (delete): {current_user_id}") 

@@ -30,9 +30,15 @@ register_model = ns.model('Register', {
     )
 })
 
+token_response = ns.model('TokenResponse', {
+    'access_token': fields.String(description='JWT access token')
+})
+
 @ns.route('/login')
 class Login(Resource):
     @ns.expect(login_model)
+    @ns.response(200, 'Login successful', token_response)
+    @ns.response(401, 'Invalid credentials')
     def post(self):
         data = request.get_json()
         user = User.query.filter_by(email=data['email']).first()
@@ -51,6 +57,9 @@ class Login(Resource):
 @ns.route('/register')
 class Register(Resource):
     @ns.expect(register_model)
+    @ns.response(201, 'Registration successful', token_response)
+    @ns.response(400, 'Username or email already taken')
+    @ns.response(500, 'Internal server error')
     def post(self):
         data = request.get_json()
         try:

@@ -1,10 +1,10 @@
 import axios from 'axios';
 
+const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
 export const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  baseURL,
+  timeout: 5000,
 });
 
 apiClient.interceptors.request.use(config => {

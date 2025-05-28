@@ -13,15 +13,18 @@ export default function VenueList() {
         alert('Error loading venues');
       }
     };
+
     fetchVenues();
   }, []);
 
   return (
     <div>
-      <h2>Restaurants</h2>
+      <h2>My Venues</h2>
       <ul>
-        {venues.map(venue => (
-          <li key={venue.id}>{venue.name} - {venue.address}</li>
+        {venues.map((v) => (
+          <li key={v.id}>
+            <strong>{v.name}</strong> — {v.address} | Phone: {v.phone}
+          </li>
         ))}
       </ul>
     </div>
