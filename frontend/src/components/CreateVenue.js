@@ -17,7 +17,12 @@ export default function CreateVenue() {
 
   const handleSubmit = async () => {
     try {
-      const response = await apiClient.post('/venues', formData);
+      const response = await apiClient.post('/venues', formData, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
       alert('Venue created! ID: ' + response.data.id);
     } catch (error) {
       alert(

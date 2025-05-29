@@ -23,6 +23,6 @@ def create_app():
 
     app.register_blueprint(health_bp)
 
-    CORS(app)
+    CORS(app, origins=["http://localhost"], supports_credentials=True)
 
     return app

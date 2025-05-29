@@ -14,7 +14,7 @@ venue_model = ns.model('Venue', {
     'email': fields.String(description='Email of the venue'),
     'weekdays_hours': fields.String(required=True, description='Working hours for weekdays, format HH:MM-HH:MM'),
     'weekend_hours': fields.String(required=True, description='Working hours for weekend, format HH:MM-HH:MM'),
-    'menu_image_url': fields.String(description='URL for menu image'),
+    'menu_image_url': fields.String(required=False, description='URL for menu image'),
 })
 
 venue_response = ns.model('VenueResponse', {
@@ -38,6 +38,8 @@ def validate_hours(hours_str):
 
 @ns.route('/')
 class VenueList(Resource):
+    def options(self):
+        return {'ok': True}, 200
     @ns.doc(security='Bearer')
     @jwt_required()
     @ns.marshal_list_with(venue_model)

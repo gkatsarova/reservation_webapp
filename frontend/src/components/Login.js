@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../api/client';
 
-export default function Login() {
+export default function Login({ setToken, setUserType, setUsername }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
@@ -18,9 +18,17 @@ export default function Login() {
         email,
         password,
       });
+
       localStorage.setItem('token', response.data.access_token);
+      localStorage.setItem('user_type', response.data.user_type);
+      localStorage.setItem('username', response.data.username); 
+
+      setToken(response.data.access_token);
+      setUserType(response.data.user_type);
+      setUsername(response.data.username);
+
       alert('Login successful!');
-      navigate('/');
+      navigate('/home'); 
     } catch (error) {
       alert('Login failed');
     }
@@ -40,6 +48,9 @@ export default function Login() {
         onChange={(e) => setPassword(e.target.value)}
       />
       <button onClick={handleLogin}>Login</button>
+      <p>
+        Don't have an account? <a href="/register">Register here</a>.
+      </p>
     </div>
   );
 }
