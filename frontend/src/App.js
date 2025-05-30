@@ -21,7 +21,6 @@ export default function App() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Навигация за НЕлогнати потребители (login, register, venues)
   if (!token) {
     return (
       <Router>
@@ -38,7 +37,6 @@ export default function App() {
     );
   }
 
-  // Ако е логнат — навигация **само** към HomePage, VenueList и (ако е owner) CreateVenue
   return (
     <Router>
       <nav>

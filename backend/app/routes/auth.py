@@ -50,8 +50,9 @@ class Login(Resource):
                 expires_delta=timedelta(hours=1)
             )
             return {'access_token': access_token, 
-                    'user_type': user.user_type.value 
-                    }, 200  
+                    'user_type': user.user_type.value, 
+                    'username': user.username
+                   }, 200  
 
         return {'message': 'Invalid data'}, 401
 

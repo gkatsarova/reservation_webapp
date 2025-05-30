@@ -3,6 +3,7 @@ from .config import Config
 from .extensions import db, jwt, api, migrate
 from .routes.health import health_bp
 from flask_cors import CORS
+from flask import Flask, request
 
 def create_app():
     app = Flask(__name__)
@@ -23,6 +24,13 @@ def create_app():
 
     app.register_blueprint(health_bp)
 
-    CORS(app, origins=["http://localhost"], supports_credentials=True)
+    CORS(app, resources={r"/api/*": {"origins": ["http://localhost", "http://localhost:80", "http://localhost:3000", "http://localhost:3000"]}}, supports_credentials=True)
+
+    @app.after_request
+    def after_request(response):
+        if request.method == "OPTIONS":
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        return response
 
     return app

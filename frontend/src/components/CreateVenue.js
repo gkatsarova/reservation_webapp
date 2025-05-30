@@ -10,19 +10,20 @@ export default function CreateVenue() {
     weekdays_hours: '',
     weekend_hours: '',
     menu_image_url: '',
+    type: '', 
   });
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('You must be logged in!');
+      return;
+    }
     try {
-      const response = await apiClient.post('/venues', formData, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await apiClient.post('/venues/', formData);
       alert('Venue created! ID: ' + response.data.id);
     } catch (error) {
       alert(
@@ -54,6 +55,12 @@ export default function CreateVenue() {
         placeholder="Menu Image URL"
         onChange={handleChange}
       />
+      <select name="type" onChange={handleChange} required>
+        <option value="">Select type</option>
+        <option value="restaurant">Restaurant</option>
+        <option value="bar">Bar</option>
+        <option value="cafe">Cafe</option>
+      </select>
       <button onClick={handleSubmit}>Create</button>
     </div>
   );

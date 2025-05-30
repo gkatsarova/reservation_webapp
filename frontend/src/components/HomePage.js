@@ -4,6 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 export default function HomePage({ username, userType, setToken, setUserType, setUsername }) {
   const navigate = useNavigate();
 
+  const displayUsername = username || localStorage.getItem('username');
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user_type');
@@ -16,7 +18,7 @@ export default function HomePage({ username, userType, setToken, setUserType, se
 
   return (
     <div style={{ padding: '2rem' }}>
-      <h2>Welcome, {username || 'User'}!</h2>
+      <h2>Welcome, {displayUsername}!</h2>
       <p>User type: <strong>{userType}</strong></p>
 
       <Link to="/venues">

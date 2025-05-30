@@ -7,10 +7,14 @@ export default function VenueList() {
   useEffect(() => {
     const fetchVenues = async () => {
       try {
-        const response = await apiClient.get('/venues');
+        const response = await apiClient.get('/venues/');
         setVenues(response.data);
       } catch (error) {
-        alert('Error loading venues');
+        if (error.response && error.response.status === 401) {
+          alert('You must be logged in to view venues.');
+        } else {
+          alert('Error loading venues');
+        }
       }
     };
 
