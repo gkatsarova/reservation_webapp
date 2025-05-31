@@ -39,9 +39,10 @@ class ReservationList(Resource):
     @ns.response(201, 'The reservation has been created')
     @ns.response(400, 'Invalid data')
     def post(self):
-        current_user = get_jwt_identity()
-        if current_user['user_type'] != UserType.CUSTOMER.value:
-            return {'message': 'Only clients can make reservations'}, 403
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        if not user or user.user_type != UserType.CUSTOMER:
+            return {'message': 'Only customers can make reservations'}, 403
 
         data = request.get_json()
         
@@ -64,7 +65,7 @@ class ReservationList(Resource):
             return {'message': 'This hour is already taken'}, 400
 
         new_reservation = Reservation(
-            customer_id=current_user['id'],
+            customer_id=current_user_id,
             venue_id=data['venue_id'],
             reservation_time=reservation_time,
             party_size=data['party_size'],
@@ -74,14 +75,14 @@ class ReservationList(Resource):
         db.session.add(new_reservation)
         db.session.commit()
         
-        return {'message': 'The resevation has been created', 'id': new_reservation.id}, 201
+        return {'message': 'The reservation has been created', 'id': new_reservation.id}, 201
 
 @ns.route('/<int:reservation_id>/status')
 class ReservationStatusUpdate(Resource):
     @ns.doc(security='Bearer')
     @jwt_required()
     @ns.expect(status_model)
-    @ns.response(200, 'Staus updated successfully')
+    @ns.response(200, 'Status updated successfully')
     @ns.response(403, 'You do not have permission to change this status')
     def patch(self, reservation_id):
         current_user = get_jwt_identity()
