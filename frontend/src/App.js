@@ -1,57 +1,55 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import Register from './components/Register';
 import Login from './components/Login';
 import VenueList from './components/VenueList';
+import HomePage from './components/HomePage';
 import CreateVenue from './components/CreateVenue';
-
-function isAuthenticated() {
-  return !!localStorage.getItem('token');
-}
-
-function PrivateRoute({ children }) {
-  return isAuthenticated() ? children : <Navigate to="/login" />;
-}
+import VenueDetails from './components/VenueDetails';
 
 export default function App() {
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
-  };
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [userType, setUserType] = useState(localStorage.getItem('user_type'));
+  const [username, setUsername] = useState(localStorage.getItem('username'));
 
-  const token = localStorage.getItem('token');
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setToken(localStorage.getItem('token'));
+      setUserType(localStorage.getItem('user_type'));
+      setUsername(localStorage.getItem('username'));
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  if (!token) {
+    return (
+      <Router>
+        <nav>
+          <Link to="/venues">Venues</Link> | <Link to="/register">Register</Link> | <Link to="/login">Login</Link>
+        </nav>
+        <Routes>
+          <Route path="/venues" element={<VenueList />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login setToken={setToken} setUserType={setUserType} setUsername={setUsername} />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Router>
+    );
+  }
 
   return (
     <Router>
       <nav>
-        <Link to="/">Venues</Link> |{' '}
-        {!token && (
-          <>
-            <Link to="/register">Register</Link> | <Link to="/login">Login</Link>
-          </>
-        )}
-        {token && <button onClick={handleLogout}>Logout</button>}
+        <Link to="/">Home</Link> | <Link to="/venues">Venues</Link> |{' '}
+        {userType === 'owner' && <Link to="/create-venue">Create Venue</Link>}
       </nav>
-
       <Routes>
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <VenueList />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/create-venue"
-          element={
-            <PrivateRoute>
-              <CreateVenue />
-            </PrivateRoute>
-          }
-        />
+        <Route path="/" element={<HomePage username={username} userType={userType} setToken={setToken} setUserType={setUserType} setUsername={setUsername} />} />
+        <Route path="/venues" element={<VenueList />} />
+        <Route path="/venues/:id" element={<VenueDetails />} />
+        {userType === 'owner' && <Route path="/create-venue" element={<CreateVenue />} />}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

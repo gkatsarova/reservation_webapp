@@ -49,7 +49,11 @@ class Login(Resource):
                 additional_claims={'user_type': user.user_type.value},
                 expires_delta=timedelta(hours=1)
             )
-            return {'access_token': access_token}, 200
+            return {'access_token': access_token, 
+                    'user_type': user.user_type.value, 
+                    'username': user.username,
+                    "user_id": user.id
+                   }, 200  
 
         return {'message': 'Invalid data'}, 401
 
