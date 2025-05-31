@@ -5,6 +5,7 @@ import Login from './components/Login';
 import VenueList from './components/VenueList';
 import HomePage from './components/HomePage';
 import CreateVenue from './components/CreateVenue';
+import VenueDetails from './components/VenueDetails';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -46,6 +47,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage username={username} userType={userType} setToken={setToken} setUserType={setUserType} setUsername={setUsername} />} />
         <Route path="/venues" element={<VenueList />} />
+        <Route path="/venues/:id" element={<VenueDetails />} />
         {userType === 'owner' && <Route path="/create-venue" element={<CreateVenue />} />}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

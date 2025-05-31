@@ -8,6 +8,7 @@ from datetime import datetime
 ns = Namespace('venues', description='Venue operations')
 
 venue_model = ns.model('Venue', {
+    'id': fields.Integer,
     'name': fields.String(required=True, description='Name of the venue'),
     'address': fields.String(required=True, description='Address'),
     'phone': fields.String(required=True, description='Phone number'),
@@ -15,8 +16,11 @@ venue_model = ns.model('Venue', {
     'weekdays_hours': fields.String(required=True, description='Working hours for weekdays, format HH:MM-HH:MM'),
     'weekend_hours': fields.String(required=True, description='Working hours for weekend, format HH:MM-HH:MM'),
     'menu_image_url': fields.String(required=False, description='URL for menu image'),
-    'venue_type': fields.String(required=True, description='Type of the venue (restaurant, bar, cafe, etc.)'),
+    'venue_type': fields.String(attribute=lambda x: x.venue_type.value, required=True, description='Type of the venue (restaurant, bar, cafe, etc.)'),
 })
+
+def enum_to_val(enum_obj):
+    return enum_obj.value if enum_obj else None
 
 venue_response = ns.model('VenueResponse', {
     'message': fields.String,
@@ -47,11 +51,9 @@ class VenueListCreate(Resource):
         user = User.query.get(current_user_id)
         if not user:
             return {'message': 'User not found'}, 404
+        
+        venues = Venue.query.all()
 
-        if user.user_type != UserType.OWNER:
-            return []
-
-        venues = Venue.query.filter_by(owner_id=user.id).all()
         return venues
 
     @ns.doc(security='Bearer')
@@ -102,7 +104,7 @@ class VenueListCreate(Resource):
             weekdays_hours=weekdays_hours,
             weekend_hours=weekend_hours,
             menu_image_url=data.get('menu_image_url'),
-            venue_type=VenueType(data['venue_type']) 
+            venue_type=VenueType(data['type']) 
         )
 
         try:
@@ -115,6 +117,14 @@ class VenueListCreate(Resource):
 
 @ns.route('/<int:venue_id>')
 class VenueDetail(Resource):
+    @ns.marshal_with(venue_model)
+    @ns.response(200, 'Venue details')
+    @ns.response(404, 'Venue not found')
+    @jwt_required()
+    def get(self, venue_id):
+        venue = Venue.query.get_or_404(venue_id)
+        return venue
+    
     @ns.response(200, 'Venue deleted')
     @ns.response(403, 'No permission')
     @ns.response(404, 'Venue not found')

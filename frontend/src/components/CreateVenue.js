@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { apiClient } from '../api/client';
+import { Link } from 'react-router-dom';
 
 export default function CreateVenue() {
   const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ export default function CreateVenue() {
     menu_image_url: '',
     type: '', 
   });
+  const [venues, setVenues] = useState([]);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -62,6 +64,17 @@ export default function CreateVenue() {
         <option value="cafe">Cafe</option>
       </select>
       <button onClick={handleSubmit}>Create</button>
+
+      <h3>Venues List</h3>
+      <ul>
+        {venues.map((venue) => (
+          <li key={venue.id}>
+            <Link to={`/venues/${venue.id}`}>
+            <button>{venue.name}</button>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
