@@ -51,7 +51,8 @@ class Login(Resource):
             )
             return {'access_token': access_token, 
                     'user_type': user.user_type.value, 
-                    'username': user.username
+                    'username': user.username,
+                    "user_id": user.id
                    }, 200  
 
         return {'message': 'Invalid data'}, 401

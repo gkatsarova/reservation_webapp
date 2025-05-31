@@ -22,6 +22,7 @@ export default function Login({ setToken, setUserType, setUsername }) {
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('user_type', response.data.user_type);
       localStorage.setItem('username', response.data.username); 
+      localStorage.setItem('user_id', response.data.user_id);
 
       setToken(response.data.access_token);
       setUserType(response.data.user_type);

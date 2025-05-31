@@ -9,6 +9,7 @@ ns = Namespace('venues', description='Venue operations')
 
 venue_model = ns.model('Venue', {
     'id': fields.Integer,
+    'owner_id': fields.Integer,
     'name': fields.String(required=True, description='Name of the venue'),
     'address': fields.String(required=True, description='Address'),
     'phone': fields.String(required=True, description='Phone number'),
@@ -52,7 +53,10 @@ class VenueListCreate(Resource):
         if not user:
             return {'message': 'User not found'}, 404
         
-        venues = Venue.query.all()
+        if user.user_type == UserType.OWNER:
+            venues = Venue.query.filter_by(owner_id=user.id).all()
+        else:
+            venues = Venue.query.all()
 
         return venues
 
@@ -128,6 +132,7 @@ class VenueDetail(Resource):
     @ns.response(200, 'Venue deleted')
     @ns.response(403, 'No permission')
     @ns.response(404, 'Venue not found')
+    @jwt_required()
     def delete(self, venue_id):
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { apiClient } from '../api/client';
 
 export default function VenueDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [venue, setVenue] = useState(null);
 
   useEffect(() => {
@@ -18,7 +19,25 @@ export default function VenueDetails() {
     fetchVenue();
   }, [id]);
 
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete this venue?')) {
+      try {
+        const token = localStorage.getItem('token');
+        await apiClient.delete(`/venues/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        alert('Venue deleted');
+        navigate('/venues');
+      } catch (error) {
+        alert('Error deleting venue');
+      }
+    }
+  }
+
   if (!venue) return <div>Loading...</div>;
+
+  console.log('user_id:', localStorage.getItem('user_id'));
+  console.log('venue.owner_id:', venue.owner_id);
 
   return (
     <div style={{ padding: '2rem' }}>
@@ -39,6 +58,11 @@ export default function VenueDetails() {
       <Link to="/venues">
         <button>Back to list</button>
       </Link>
+      {Number(localStorage.getItem('user_id')) === venue.owner_id && (
+        <button onClick={handleDelete} style={{ marginLeft: 10, color: 'red' }}>
+          Delete Venue
+        </button>
+      )}
     </div>
   );
 }
