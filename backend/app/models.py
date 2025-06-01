@@ -49,6 +49,8 @@ class Venue(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     owner = db.relationship('User', back_populates='venue')
     reservations = db.relationship('Reservation', back_populates='venue')
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
 
 class Reservation(db.Model):
     __tablename__ = 'reservations'

@@ -4,6 +4,7 @@ from ..models import Venue, User, UserType, VenueType
 from ..extensions import db
 from flask import request
 from datetime import datetime
+import requests
 
 ns = Namespace('venues', description='Venue operations')
 
@@ -18,6 +19,8 @@ venue_model = ns.model('Venue', {
     'weekend_hours': fields.String(required=True, description='Working hours for weekend, format HH:MM-HH:MM'),
     'menu_image_url': fields.String(required=False, description='URL for menu image'),
     'venue_type': fields.String(attribute=lambda x: x.venue_type.value, required=True, description='Type of the venue (restaurant, bar, cafe, etc.)'),
+    'latitude': fields.Float,
+    'longitude': fields.Float
 })
 
 def enum_to_val(enum_obj):
@@ -41,6 +44,16 @@ def validate_hours(hours_str):
         return True
     except:
         return False
+
+def get_coordinates(address):
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {"q": address, "format": "json", "limit": 1}
+    headers = {"User-Agent": "reservation-app"}
+    resp = requests.get(url, params=params, headers=headers)
+    data = resp.json()
+    if data and len(data) > 0:
+        return float(data[0]['lat']), float(data[0]['lon'])
+    return None, None
 
 @ns.route('/')
 class VenueListCreate(Resource):
@@ -98,6 +111,10 @@ class VenueListCreate(Resource):
 
         if data['type'] not in VenueType._value2member_map_:
             return {'message': 'Invalid venue type.'}, 400
+        
+        lat, lon = get_coordinates(data['address'])
+        if lat is None or lon is None:
+            return {'message': 'Address does not exist or is invalid.'}, 400
 
         venue = Venue(
             owner_id=user.id,
@@ -108,7 +125,9 @@ class VenueListCreate(Resource):
             weekdays_hours=weekdays_hours,
             weekend_hours=weekend_hours,
             menu_image_url=data.get('menu_image_url'),
-            venue_type=VenueType(data['type']) 
+            venue_type=VenueType(data['type']),
+            latitude=lat,
+            longitude=lon 
         )
 
         try:

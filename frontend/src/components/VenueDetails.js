@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { apiClient } from '../api/client';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 
 export default function VenueDetails() {
   const { id } = useParams();
@@ -12,6 +14,7 @@ export default function VenueDetails() {
     party_size: 1,
     notes: ''
   });
+  const [coords, setCoords] = useState(null);
 
   useEffect(() => {
     const fetchVenue = async () => {
@@ -24,6 +27,12 @@ export default function VenueDetails() {
     };
     fetchVenue();
   }, [id]);
+
+  useEffect(() => {
+    if (venue && venue.latitude && venue.longitude) {
+      setCoords([venue.latitude, venue.longitude]);
+    }
+  }, [venue]);
 
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this venue?')) {
@@ -102,6 +111,12 @@ export default function VenueDetails() {
       <h2>{venue.name}</h2>
       <p><strong>Type:</strong> {venue.venue_type}</p>
       <p><strong>Address:</strong> {venue.address}</p>
+      {coords && (
+        <MapContainer center={coords} zoom={16} style={{ height: 300, width: '100%', marginBottom: 10 }}>
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <Marker position={coords} />
+        </MapContainer>
+      )}
       <p><strong>Phone:</strong> {venue.phone}</p>
       <p><strong>Email:</strong> {venue.email}</p>
       <p><strong>Weekdays hours:</strong> {venue.weekdays_hours}</p>
