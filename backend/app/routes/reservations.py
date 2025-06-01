@@ -107,22 +107,22 @@ class ReservationList(Resource):
 class ReservationStatusUpdate(Resource):
     @ns.doc(security='Bearer')
     @jwt_required()
-    @ns.expect(status_model)
-    @ns.response(200, 'Status updated successfully')
-    @ns.response(403, 'You do not have permission to change this status')
     def patch(self, reservation_id):
-        current_user = get_jwt_identity()
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
         reservation = Reservation.query.get_or_404(reservation_id)
         venue = Venue.query.get(reservation.venue_id)
+        if user.id != venue.owner_id or user.user_type != UserType.OWNER:
+            return {'message': 'You do not have permission'}, 403
 
-        if current_user['id'] != venue.owner_id or current_user['user_type'] != UserType.OWNER.value:
-            return {'message': 'You do not have permission to update this status'}, 403
+        data = request.get_json()
+        new_status = data.get('status')
+        if new_status not in [s.value for s in ReservationStatus]:
+            return {'message': 'Invalid status'}, 400
 
-        new_status = ReservationStatus(request.json['status'])
-        reservation.status = new_status
+        reservation.status = ReservationStatus(new_status)
         db.session.commit()
-
-        return {'message': 'Status has been changed'}, 200
+        return {'message': 'Status updated'}, 200
 
 @ns.route('/venue/<int:venue_id>')
 class VenueReservations(Resource):

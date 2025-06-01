@@ -57,12 +57,58 @@ export default function ReservationList() {
             <div><strong>Status:</strong> {r.status}</div>
             <div><strong>Notes:</strong> {r.notes}</div>
             {userType === 'owner' && (
-              <div><strong>Customer:</strong> {r.customer_name}</div>
+              <>
+                <div><strong>Customer:</strong> {r.customer_name}</div>
+                <div style={{ marginTop: 10 }}>
+                  <button
+                    onClick={async () => {
+                      const token = localStorage.getItem('token');
+                      try {
+                        await apiClient.patch(`/reservations/${r.id}/status`, { status: 'confirmed' }, {
+                          headers: { Authorization: `Bearer ${token}` }
+                        });
+                        setReservations(reservations =>
+                          reservations.map(res =>
+                            res.id === r.id ? { ...res, status: 'confirmed' } : res
+                          )
+                        );
+                      } catch {
+                        alert('Error updating status');
+                      }
+                    }}
+                    disabled={r.status === 'confirmed'}
+                    style={{ marginRight: 8 }}
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const token = localStorage.getItem('token');
+                      try {
+                        await apiClient.patch(`/reservations/${r.id}/status`, { status: 'cancelled' }, {
+                          headers: { Authorization: `Bearer ${token}` }
+                        });
+                        setReservations(reservations =>
+                          reservations.map(res =>
+                            res.id === r.id ? { ...res, status: 'cancelled' } : res
+                          )
+                        );
+                      } catch {
+                        alert('Error updating status');
+                      }
+                    }}
+                    disabled={r.status === 'cancelled'}
+                    style={{ color: 'red' }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
             )}
             {userType === 'customer' && r.customer_id === userId && (
               <button
                 onClick={() => handleDelete(r.id)}
-                style={{marginTop: 10, color: 'red'}}
+                style={{ marginTop: 10, color: 'red' }}
               >
                 Delete Reservation
               </button>
