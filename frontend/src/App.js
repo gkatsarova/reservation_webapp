@@ -6,6 +6,7 @@ import VenueList from './components/VenueList';
 import HomePage from './components/HomePage';
 import CreateVenue from './components/CreateVenue';
 import VenueDetails from './components/VenueDetails';
+import ReservationList from './components/ReservationList';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -43,12 +44,14 @@ export default function App() {
       <nav>
         <Link to="/">Home</Link> | <Link to="/venues">Venues</Link> |{' '}
         {userType === 'owner' && <Link to="/create-venue">Create Venue</Link>}
+        <Link to="/reservations">My Reservations</Link>
       </nav>
       <Routes>
         <Route path="/" element={<HomePage username={username} userType={userType} setToken={setToken} setUserType={setUserType} setUsername={setUsername} />} />
         <Route path="/venues" element={<VenueList />} />
         <Route path="/venues/:id" element={<VenueDetails />} />
         {userType === 'owner' && <Route path="/create-venue" element={<CreateVenue />} />}
+        <Route path="/reservations" element={<ReservationList />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
