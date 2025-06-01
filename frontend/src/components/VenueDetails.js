@@ -74,6 +74,20 @@ export default function VenueDetails() {
     }
   }
 
+  const handleDeleteComment = async (commentId) => {
+    if (window.confirm('Are you sure you want to delete this comment?')) {
+      try {
+        const token = localStorage.getItem('token');
+        await apiClient.delete(`/venues/${id}/comments/${commentId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        fetchComments();
+      } catch (error) {
+        alert('Error deleting comment');
+      }
+    }
+  };
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -230,6 +244,14 @@ export default function VenueDetails() {
           <li key={idx}>
             <strong>Rating:</strong> {c.rating} <br />
             <span>{c.text}</span>
+            {Number(localStorage.getItem('user_id')) === c.user_id && (
+              <button
+                style={{ marginLeft: 10, color: 'red' }}
+                onClick={() => handleDeleteComment(c.id)}
+              >
+                Delete Comment
+              </button>
+            )}
           </li>
         ))}
       </ul>

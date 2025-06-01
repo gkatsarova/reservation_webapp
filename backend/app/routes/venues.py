@@ -205,3 +205,20 @@ class VenueComments(Resource):
         db.session.add(comment)
         db.session.commit()
         return {'message': 'Comment added.'}, 201
+    
+@ns.route('/<int:venue_id>/comments/<int:comment_id>')
+class VenueCommentDelete(Resource):
+    @jwt_required()
+    @ns.response(200, 'Comment deleted')
+    @ns.response(403, 'No permission')
+    @ns.response(404, 'Comment not found')
+    def delete(self, venue_id, comment_id):
+        user_id = get_jwt_identity()
+        comment = VenueComment.query.filter_by(id=comment_id, venue_id=venue_id).first()
+        if not comment:
+            return {'message': 'Comment not found'}, 404
+        if comment.user_id != int(user_id):
+            return {'message': 'No permission to delete this comment'}, 403
+        db.session.delete(comment)
+        db.session.commit()
+        return {'message': 'Comment deleted'}, 200
