@@ -8,10 +8,15 @@ from ..extensions import db
 ns = Namespace('reservations', description='Reservation operations')
 
 reservation_model = ns.model('Reservation', {
+    'id': fields.Integer,
     'venue_id': fields.Integer(required=True, description='ID of the restaurant'),
+    'venue_name': fields.String,
     'reservation_time': fields.DateTime(required=True, description='Date (YYYY-MM-DD HH:MM)'),
     'party_size': fields.Integer(required=True, description='Number of guests'),
     'notes': fields.String(description='Options or special requests'),
+    'status': fields.String,
+    'customer_name': fields.String,
+    'customer_id': fields.Integer
 })
 
 reservation_response = ns.model('ReservationResponse', {
@@ -29,9 +34,30 @@ class ReservationList(Resource):
     @jwt_required()
     @ns.marshal_list_with(reservation_model)
     def get(self):
-        current_user = get_jwt_identity()
-        user = User.query.get(current_user['id'])
-        return user.reservations
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        if not user:
+            return [], 200
+
+        if user.user_type == UserType.CUSTOMER:
+            reservations = Reservation.query.filter_by(customer_id=user.id).all()
+        elif user.user_type == UserType.OWNER:
+            venue_ids = [v.id for v in Venue.query.filter_by(owner_id=user.id).all()]
+            reservations = Reservation.query.filter(Reservation.venue_id.in_(venue_ids)).all()
+        else:
+            reservations = []
+
+        result = []
+        for r in reservations:
+            res_dict = r.as_dict() if hasattr(r, 'as_dict') else r.__dict__
+            res_dict['id'] = r.id
+            res_dict['venue_name'] = r.venue.name if r.venue else ''
+            res_dict['customer_name'] = r.customer.username if hasattr(r, 'customer') and r.customer else ''
+            res_dict['status'] = r.status.value if hasattr(r.status, 'value') else r.status
+            res_dict['notes'] = r.notes
+            res_dict['customer_id'] = r.customer_id
+            result.append(res_dict)
+        return result, 200
 
     @ns.doc(security='Bearer')
     @jwt_required()
@@ -111,4 +137,24 @@ class VenueReservations(Resource):
             return {'message': 'You do not have permission'}, 403
 
         return venue.reservations
-    
+
+@ns.route('/<int:reservation_id>')
+class ReservationDelete(Resource):
+    @ns.doc(security='Bearer')
+    @jwt_required()
+    @ns.response(200, 'Reservation deleted')
+    @ns.response(403, 'You do not have permission to delete this reservation')
+    @ns.response(404, 'Reservation not found')
+    def delete(self, reservation_id):
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+
+        reservation = Reservation.query.get_or_404(reservation_id)
+
+        if user.user_type != UserType.CUSTOMER or reservation.customer_id != user.id:
+            return {'message': 'You do not have permission to delete this reservation'}, 403
+
+        db.session.delete(reservation)
+        db.session.commit()
+
+        return {'message': 'Reservation deleted'}, 200
