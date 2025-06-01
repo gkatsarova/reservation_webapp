@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+*.env
+migrations/
+instance/
+.env.*
+.git
+.gitignore
+node_modules/
+frontend/
+tests/

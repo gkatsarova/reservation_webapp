@@ -31,7 +31,7 @@ export default function App() {
         </nav>
         <Routes>
           <Route path="/venues" element={<VenueList />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/register" element={<Register setToken={setToken} setUserType={setUserType} setUsername={setUsername}/>} />
           <Route path="/login" element={<Login setToken={setToken} setUserType={setUserType} setUsername={setUsername} />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../api/client';
 
-export default function Register() {
-  const [username, setUsername] = useState('');
+export default function Register({ setToken, setUserType, setUsername}) {
+  const [username, setUsernameInput] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [userType, setUserType] = useState('customer');
+  const [userType, setUserTypeInput] = useState('customer');
   const navigate = useNavigate();
 
   const handleRegister = async () => {
@@ -16,14 +16,25 @@ export default function Register() {
     }
 
     try {
-      await apiClient.post('/auth/register', {
+      const response = await apiClient.post('/auth/register', {
         username,
         email,
         password,
         user_type: userType,
       });
+      if (response.data.access_token) {
+        localStorage.setItem('token', response.data.access_token);
+        localStorage.setItem('user_type', userType);
+        localStorage.setItem('user_id', response.data.user_id);
+        setToken && setToken(response.data.access_token);
+        setUserType && setUserType(userType);
+        setUsername && setUsername(username);
+        alert('Registration succesful! You are logged in.');
+        navigate('/home');
+      } else{
       alert('Registration successful! You can now log in.');
       navigate('/login');
+      }
     } catch (error) {
       console.error('Registration error:', error);
       alert(
@@ -39,7 +50,7 @@ export default function Register() {
       <input
         type="text"
         placeholder="Username"
-        onChange={(e) => setUsername(e.target.value)}
+        onChange={(e) => setUsernameInput(e.target.value)}
       />
       <input
         type="email"
@@ -51,7 +62,7 @@ export default function Register() {
         placeholder="Password"
         onChange={(e) => setPassword(e.target.value)}
       />
-      <select onChange={(e) => setUserType(e.target.value)} value={userType}>
+      <select onChange={(e) => setUserTypeInput(e.target.value)} value={userType}>
         <option value="customer">Customer</option>
         <option value="owner">Owner</option>
       </select>

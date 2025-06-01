@@ -1,6 +1,29 @@
 import React, { useState } from 'react';
 import { apiClient } from '../api/client';
 import { Link } from 'react-router-dom';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+
+function SetMapView({ coords }) {
+  const map = useMap();
+  if (coords) map.setView(coords, 16);
+  return null;
+}
+
+function LocationSelector({ setCoords, setFormData }) {
+  useMapEvents({
+    click: async (e) => {
+      const { lat, lng } = e.latlng;
+      setCoords([lat, lng]);
+      const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+      const data = await resp.json();
+      if (data && data.display_name) {
+        setFormData((prev) => ({ ...prev, address: data.display_name }));
+      }
+    }
+  });
+  return null;
+}
 
 export default function CreateVenue() {
   const [formData, setFormData] = useState({
@@ -14,6 +37,7 @@ export default function CreateVenue() {
     type: '', 
   });
   const [venues, setVenues] = useState([]);
+  const [coords, setCoords] = useState(null);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -35,11 +59,29 @@ export default function CreateVenue() {
     }
   };
 
+  const handleAddressBlur = async () => {
+    if (!formData.address) return;
+    const resp = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(formData.address)}&format=json&limit=1`);
+    const data = await resp.json();
+    if (data && data[0]) {
+      setCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+    } else {
+      setCoords(null);
+      alert('Address not found on map!');
+    }
+  };
+
   return (
     <div>
       <h2>Create Venue</h2>
       <input name="name" placeholder="Name" onChange={handleChange} />
-      <input name="address" placeholder="Address" onChange={handleChange} />
+      <input
+        name="address"
+        placeholder="Address"
+        value={formData.address}
+        onChange={handleChange}
+        onBlur={handleAddressBlur}
+      />
       <input name="phone" placeholder="Phone" onChange={handleChange} />
       <input name="email" placeholder="Email" onChange={handleChange} />
       <input
@@ -75,6 +117,15 @@ export default function CreateVenue() {
           </li>
         ))}
       </ul>
+
+      {coords && (
+        <MapContainer center={coords} zoom={16} style={{ height: 300, width: '100%', marginTop: 10 }}>
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <Marker position={coords} />
+          <SetMapView coords={coords} />
+          <LocationSelector setCoords={setCoords} setFormData={setFormData} />
+        </MapContainer>
+      )}
     </div>
   );
 }

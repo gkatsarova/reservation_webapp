@@ -1,29 +1,63 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { apiClient } from '../api/client';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 
 export default function VenueDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [venue, setVenue] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [newRating, setNewRating] = useState(5);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     reservation_time: '',
     party_size: 1,
     notes: ''
   });
+  const [coords, setCoords] = useState(null);
 
   useEffect(() => {
     const fetchVenue = async () => {
       try {
         const response = await apiClient.get(`/venues/${id}`);
         setVenue(response.data);
+        if (response.data.latitude && response.data.longitude) {
+          setCoords([response.data.latitude, response.data.longitude]);
+        }
       } catch (error) {
         alert('Error loading venue details');
       }
     };
     fetchVenue();
+    fetchComments();
   }, [id]);
+
+  const fetchComments = async () => {
+    try {
+      const response = await apiClient.get(`/venues/${id}/comments`);
+      setComments(response.data);
+    } catch (error) {
+      alert('Error loading comments');
+    }
+  };
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await apiClient.post(`/venues/${id}/comments`, {
+        text: newComment,
+        rating: newRating,
+      });
+      setNewComment('');
+      setNewRating(5);
+      fetchComments();
+    } catch (error) {
+      alert('Error submitting comment');
+    }
+  };
 
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this venue?')) {
@@ -39,6 +73,20 @@ export default function VenueDetails() {
       }
     }
   }
+
+  const handleDeleteComment = async (commentId) => {
+    if (window.confirm('Are you sure you want to delete this comment?')) {
+      try {
+        const token = localStorage.getItem('token');
+        await apiClient.delete(`/venues/${id}/comments/${commentId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        fetchComments();
+      } catch (error) {
+        alert('Error deleting comment');
+      }
+    }
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -102,6 +150,12 @@ export default function VenueDetails() {
       <h2>{venue.name}</h2>
       <p><strong>Type:</strong> {venue.venue_type}</p>
       <p><strong>Address:</strong> {venue.address}</p>
+      {coords && (
+        <MapContainer center={coords} zoom={16} style={{ height: 300, width: '100%', marginBottom: 10 }}>
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <Marker position={coords} />
+        </MapContainer>
+      )}
       <p><strong>Phone:</strong> {venue.phone}</p>
       <p><strong>Email:</strong> {venue.email}</p>
       <p><strong>Weekdays hours:</strong> {venue.weekdays_hours}</p>
@@ -165,6 +219,42 @@ export default function VenueDetails() {
           Delete Venue
         </button>
       )}
+      <h3>Comments & Ratings</h3>
+      <form onSubmit={handleCommentSubmit}>
+        <label>
+          Rating:
+          <select value={newRating} onChange={e => setNewRating(Number(e.target.value))}>
+            {[1,2,3,4,5].map(n => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </label>
+        <br />
+        <textarea
+          placeholder="Write your comment..."
+          value={newComment}
+          onChange={e => setNewComment(e.target.value)}
+          required
+        />
+        <br />
+        <button type="submit">Submit</button>
+      </form>
+      <ul>
+        {comments.map((c, idx) => (
+          <li key={idx}>
+            <strong>Rating:</strong> {c.rating} <br />
+            <span>{c.text}</span>
+            {Number(localStorage.getItem('user_id')) === c.user_id && (
+              <button
+                style={{ marginLeft: 10, color: 'red' }}
+                onClick={() => handleDeleteComment(c.id)}
+              >
+                Delete Comment
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

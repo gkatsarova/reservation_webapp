@@ -1,9 +1,10 @@
 from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from ..models import Venue, User, UserType, VenueType
+from ..models import Venue, User, UserType, VenueType,VenueComment
 from ..extensions import db
 from flask import request
 from datetime import datetime
+import requests
 
 ns = Namespace('venues', description='Venue operations')
 
@@ -18,6 +19,18 @@ venue_model = ns.model('Venue', {
     'weekend_hours': fields.String(required=True, description='Working hours for weekend, format HH:MM-HH:MM'),
     'menu_image_url': fields.String(required=False, description='URL for menu image'),
     'venue_type': fields.String(attribute=lambda x: x.venue_type.value, required=True, description='Type of the venue (restaurant, bar, cafe, etc.)'),
+    'latitude': fields.Float,
+    'longitude': fields.Float
+})
+
+comment_model = ns.model('VenueComment', {
+    'id': fields.Integer,
+    'venue_id': fields.Integer,
+    'user_id': fields.Integer,
+    'text': fields.String,
+    'rating': fields.Float,
+    'created_at': fields.DateTime,
+    'username': fields.String(attribute=lambda c: c.user.username if c.user else "")
 })
 
 def enum_to_val(enum_obj):
@@ -41,6 +54,16 @@ def validate_hours(hours_str):
         return True
     except:
         return False
+
+def get_coordinates(address):
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {"q": address, "format": "json", "limit": 1}
+    headers = {"User-Agent": "reservation-app"}
+    resp = requests.get(url, params=params, headers=headers)
+    data = resp.json()
+    if data and len(data) > 0:
+        return float(data[0]['lat']), float(data[0]['lon'])
+    return None, None
 
 @ns.route('/')
 class VenueListCreate(Resource):
@@ -98,6 +121,10 @@ class VenueListCreate(Resource):
 
         if data['type'] not in VenueType._value2member_map_:
             return {'message': 'Invalid venue type.'}, 400
+        
+        lat, lon = get_coordinates(data['address'])
+        if lat is None or lon is None:
+            return {'message': 'Address does not exist or is invalid.'}, 400
 
         venue = Venue(
             owner_id=user.id,
@@ -108,7 +135,9 @@ class VenueListCreate(Resource):
             weekdays_hours=weekdays_hours,
             weekend_hours=weekend_hours,
             menu_image_url=data.get('menu_image_url'),
-            venue_type=VenueType(data['type']) 
+            venue_type=VenueType(data['type']),
+            latitude=lat,
+            longitude=lon 
         )
 
         try:
@@ -150,3 +179,46 @@ class VenueDetail(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': f'Error with deleting: {str(e)}'}, 500
+        
+@ns.route('/<int:venue_id>/comments')
+class VenueComments(Resource):
+    @ns.marshal_list_with(comment_model)
+    def get(self, venue_id):
+        comments = VenueComment.query.filter_by(venue_id=venue_id).order_by(VenueComment.created_at.desc()).all()
+        return comments
+    
+    @jwt_required()
+    @ns.expect(comment_model)
+    def post(self, venue_id):
+        data = request.get_json()
+        user_id = get_jwt_identity()
+        text = data.get('text', '').strip()
+        rating = data.get('rating')
+        if not text or not rating or not (1 <= int(rating) <= 5):
+            return {'message': 'Text and rating (1-5) are required.'}, 400
+        comment = VenueComment(
+            venue_id=venue_id,
+            user_id=user_id,
+            text=text,
+            rating=int(rating)
+        )
+        db.session.add(comment)
+        db.session.commit()
+        return {'message': 'Comment added.'}, 201
+    
+@ns.route('/<int:venue_id>/comments/<int:comment_id>')
+class VenueCommentDelete(Resource):
+    @jwt_required()
+    @ns.response(200, 'Comment deleted')
+    @ns.response(403, 'No permission')
+    @ns.response(404, 'Comment not found')
+    def delete(self, venue_id, comment_id):
+        user_id = get_jwt_identity()
+        comment = VenueComment.query.filter_by(id=comment_id, venue_id=venue_id).first()
+        if not comment:
+            return {'message': 'Comment not found'}, 404
+        if comment.user_id != int(user_id):
+            return {'message': 'No permission to delete this comment'}, 403
+        db.session.delete(comment)
+        db.session.commit()
+        return {'message': 'Comment deleted'}, 200
