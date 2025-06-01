@@ -53,7 +53,7 @@ class Login(Resource):
                     'user_type': user.user_type.value, 
                     'username': user.username,
                     "user_id": user.id
-                   }, 200  
+                   }, 201  
 
         return {'message': 'Invalid data'}, 401
 

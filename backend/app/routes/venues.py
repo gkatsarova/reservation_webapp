@@ -1,6 +1,6 @@
 from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from ..models import Venue, User, UserType, VenueType
+from ..models import Venue, User, UserType, VenueType,VenueComment
 from ..extensions import db
 from flask import request
 from datetime import datetime
@@ -21,6 +21,16 @@ venue_model = ns.model('Venue', {
     'venue_type': fields.String(attribute=lambda x: x.venue_type.value, required=True, description='Type of the venue (restaurant, bar, cafe, etc.)'),
     'latitude': fields.Float,
     'longitude': fields.Float
+})
+
+comment_model = ns.model('VenueComment', {
+    'id': fields.Integer,
+    'venue_id': fields.Integer,
+    'user_id': fields.Integer,
+    'text': fields.String,
+    'rating': fields.Float,
+    'created_at': fields.DateTime,
+    'username': fields.String(attribute=lambda c: c.user.username if c.user else "")
 })
 
 def enum_to_val(enum_obj):
@@ -169,3 +179,29 @@ class VenueDetail(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': f'Error with deleting: {str(e)}'}, 500
+        
+@ns.route('/<int:venue_id>/comments')
+class VenueComments(Resource):
+    @ns.marshal_list_with(comment_model)
+    def get(self, venue_id):
+        comments = VenueComment.query.filter_by(venue_id=venue_id).order_by(VenueComment.created_at.desc()).all()
+        return comments
+    
+    @jwt_required()
+    @ns.expect(comment_model)
+    def post(self, venue_id):
+        data = request.get_json()
+        user_id = get_jwt_identity()
+        text = data.get('text', '').strip()
+        rating = data.get('rating')
+        if not text or not rating or not (1 <= int(rating) <= 5):
+            return {'message': 'Text and rating (1-5) are required.'}, 400
+        comment = VenueComment(
+            venue_id=venue_id,
+            user_id=user_id,
+            text=text,
+            rating=int(rating)
+        )
+        db.session.add(comment)
+        db.session.commit()
+        return {'message': 'Comment added.'}, 201

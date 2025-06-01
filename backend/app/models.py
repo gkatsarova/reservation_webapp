@@ -49,6 +49,7 @@ class Venue(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     owner = db.relationship('User', back_populates='venue')
     reservations = db.relationship('Reservation', back_populates='venue')
+    comments = db.relationship('VenueComment', back_populates='venue', cascade="all, delete-orphan")
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
 
@@ -67,3 +68,14 @@ class Reservation(db.Model):
 
     def __repr__(self):
         return f'<Reservation {self.id} for {self.venue.name}>'
+    
+class VenueComment(db.Model):
+    __tablename__ = "venue_comments"
+    id = db.Column(db.Integer, primary_key=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('venues.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    rating = db.Column(db.Integer, nullable=False) 
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    venue = db.relationship('Venue', back_populates='comments')
+    user = db.relationship('User')
