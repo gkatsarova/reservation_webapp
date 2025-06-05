@@ -5,6 +5,7 @@ from ..extensions import db
 from flask import request
 from datetime import datetime
 import requests
+from sqlalchemy import func
 
 ns = Namespace('venues', description='Venue operations')
 
@@ -106,8 +107,6 @@ class VenueListCreate(Resource):
 
         if Venue.query.filter_by(name=data['name']).first():
             return {'message': 'Venue with this name already exists.'}, 400
-        if Venue.query.filter_by(address=data['address']).first():
-            return {'message': 'Venue with this address already exists.'}, 400
         if Venue.query.filter_by(phone=data['phone']).first():
             return {'message': 'Venue with this phone already exists.'}, 400
         if Venue.query.filter_by(email=data['email']).first():
@@ -125,6 +124,11 @@ class VenueListCreate(Resource):
         lat, lon = get_coordinates(data['address'])
         if lat is None or lon is None:
             return {'message': 'Address does not exist or is invalid.'}, 400
+
+        address = data['address'].strip().lower()
+        existing = Venue.query.filter(func.lower(func.trim(Venue.address)) == address).first()
+        if existing:
+            return {'message': 'Venue with this address already exists.'}, 400
 
         venue = Venue(
             owner_id=user.id,

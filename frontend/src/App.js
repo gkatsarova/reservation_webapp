@@ -26,9 +26,6 @@ export default function App() {
   if (!token) {
     return (
       <Router>
-        <nav>
-          <Link to="/venues">Venues</Link> | <Link to="/register">Register</Link> | <Link to="/login">Login</Link>
-        </nav>
         <Routes>
           <Route path="/venues" element={<VenueList />} />
           <Route path="/register" element={<Register setToken={setToken} setUserType={setUserType} setUsername={setUsername}/>} />
@@ -41,11 +38,6 @@ export default function App() {
 
   return (
     <Router>
-      <nav>
-        <Link to="/">Home</Link> | <Link to="/venues">Venues</Link> |{' '}
-        {userType === 'owner' && <Link to="/create-venue">Create Venue</Link>}
-        <Link to="/reservations">My Reservations</Link>
-      </nav>
       <Routes>
         <Route path="/" element={<HomePage username={username} userType={userType} setToken={setToken} setUserType={setUserType} setUsername={setUsername} />} />
         <Route path="/venues" element={<VenueList />} />
