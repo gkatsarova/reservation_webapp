@@ -42,6 +42,7 @@ class Venue(db.Model):
     venue_type = db.Column(db.Enum(VenueType), nullable=False)
     phone = db.Column(db.String(20), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    image_url = db.Column(db.String(500))  
     menu_image_url = db.Column(db.String(500)) 
     weekdays_hours = db.Column(db.String(11), nullable=False)  
     weekend_hours = db.Column(db.String(11), nullable=False) 

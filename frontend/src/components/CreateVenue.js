@@ -95,6 +95,11 @@ export default function CreateVenue() {
         onChange={handleChange}
       />
       <input
+        name="image_url"
+        placeholder="Restaurant Image URL"
+        onChange={handleChange}
+      />
+      <input
         name="menu_image_url"
         placeholder="Menu Image URL"
         onChange={handleChange}

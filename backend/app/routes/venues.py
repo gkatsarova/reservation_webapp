@@ -138,6 +138,7 @@ class VenueListCreate(Resource):
             email=data.get('email'),
             weekdays_hours=weekdays_hours,
             weekend_hours=weekend_hours,
+            image_url=data.get('image_url'),
             menu_image_url=data.get('menu_image_url'),
             venue_type=VenueType(data['type']),
             latitude=lat,
