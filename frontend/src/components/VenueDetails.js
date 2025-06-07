@@ -310,7 +310,7 @@ export default function VenueDetails() {
             <CardMedia
               component="img"
               height="400"
-              image={venue.image_url || 'https://via.placeholder.com/1200x400/6366F1/ffffff?text=Venue+Image'}
+              image={venue.image_url || 'https://via.placeholder.com/1200x400/6366f1/ffffff?text=Venue+Image'}
               alt={venue.name}
               sx={{ objectFit: 'cover' }}
             />
@@ -408,6 +408,24 @@ export default function VenueDetails() {
                   </Box>
                 )}
                 
+                {venue.image_url && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="h6" fontWeight="600" sx={{ mb: 1 }}>
+                      Restaurant Image:
+                    </Typography>
+                    <CardMedia
+                      component="img"
+                      image={venue.image_url}
+                      alt="Restaurant"
+                      sx={{
+                        borderRadius: 2,
+                        maxHeight: 300,
+                        objectFit: 'contain'
+                      }}
+                    />
+                  </Box>
+                )}
+                
                 {venue.menu_image_url && (
                   <Box sx={{ mb: 3 }}>
                     <Typography variant="h6" fontWeight="600" sx={{ mb: 1 }}>
@@ -417,7 +435,7 @@ export default function VenueDetails() {
                       component="img"
                       image={venue.menu_image_url}
                       alt="Menu"
-                      sx={{ 
+                      sx={{
                         borderRadius: 2,
                         maxHeight: 300,
                         objectFit: 'contain'

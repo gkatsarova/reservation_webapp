@@ -210,8 +210,13 @@ export default function VenueList() {
                     alt={venue.name}
                     sx={{ 
                       width: isMobile ? '100%' : '40%',
-                      objectFit: 'cover' 
+                      objectFit: 'cover',
+                      position: 'relative'
                     }}
+                    onLoad={() => {
+                      document.querySelector(`#venue-img-${venue.id}`)?.setAttribute('data-loaded', 'true');
+                    }}
+                    id={`venue-img-${venue.id}`}
                   />
                   <Box sx={{ 
                     display: 'flex', 
