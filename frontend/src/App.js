@@ -39,11 +39,60 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<HomePage username={username} userType={userType} setToken={setToken} setUserType={setUserType} setUsername={setUsername} />} />
-        <Route path="/venues" element={<VenueList />} />
-        <Route path="/venues/:id" element={<VenueDetails />} />
-        {userType === 'owner' && <Route path="/create-venue" element={<CreateVenue />} />}
-        <Route path="/reservations" element={<ReservationList />} />
+        <Route
+          path="/"
+          element={
+            <HomePage
+              username={username}
+              userType={userType}
+              setToken={setToken}
+              setUserType={setUserType}
+              setUsername={setUsername}
+            />
+          }
+        />
+        <Route
+          path="/venues"
+          element={
+            <VenueList
+              setToken={setToken}
+              setUserType={setUserType}
+              setUsername={setUsername}
+            />
+          }
+        />
+        <Route
+          path="/venues/:id"
+          element={
+            <VenueDetails
+              setToken={setToken}
+              setUserType={setUserType}
+              setUsername={setUsername}
+            />
+          }
+        />
+        {userType === 'owner' && (
+          <Route
+            path="/create-venue"
+            element={
+              <CreateVenue
+                setToken={setToken}
+                setUserType={setUserType}
+                setUsername={setUsername}
+              />
+            }
+          />
+        )}
+        <Route
+          path="/reservations"
+          element={
+            <ReservationList
+              setToken={setToken}
+              setUserType={setUserType}
+              setUsername={setUsername}
+            />
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
