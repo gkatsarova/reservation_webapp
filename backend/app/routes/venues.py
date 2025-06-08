@@ -18,6 +18,7 @@ venue_model = ns.model('Venue', {
     'email': fields.String(description='Email of the venue'),
     'weekdays_hours': fields.String(required=True, description='Working hours for weekdays, format HH:MM-HH:MM'),
     'weekend_hours': fields.String(required=True, description='Working hours for weekend, format HH:MM-HH:MM'),
+    'image_url': fields.String(required=False, description='URL for restaurant image'), 
     'menu_image_url': fields.String(required=False, description='URL for menu image'),
     'venue_type': fields.String(attribute=lambda x: x.venue_type.value, required=True, description='Type of the venue (restaurant, bar, cafe, etc.)'),
     'latitude': fields.Float,

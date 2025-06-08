@@ -49,7 +49,7 @@ class Venue(db.Model):
     address = db.Column(db.String(200), unique=True, nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     owner = db.relationship('User', back_populates='venue')
-    reservations = db.relationship('Reservation', back_populates='venue')
+    reservations = db.relationship('Reservation', back_populates='venue', cascade="all, delete-orphan")
     comments = db.relationship('VenueComment', back_populates='venue', cascade="all, delete-orphan")
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)

@@ -24,7 +24,7 @@ export default function VenueList() {
   const [error, setError] = useState('');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const userType = localStorage.getItem('user_type'); // вземи типа на потребителя
+  const userType = localStorage.getItem('user_type');
 
   useEffect(() => {
     const fetchVenues = async () => {
@@ -48,8 +48,9 @@ export default function VenueList() {
   }, []);
 
   const getPlaceholderImage = (index) => {
-    const colors = ['#6366F1', '#0EA5E9', '#10B981', '#F59E0B'];
-    return `https://via.placeholder.com/800x400/${colors[index % colors.length].slice(1)}/ffffff?text=Venue+${index+1}`;
+    const colors = ['6366f1', '0ea5e9', '10b981', 'f59e0b'];
+    const color = colors[index % colors.length] || '999999';
+    return `https://via.placeholder.com/800x400/${color}/ffffff?text=Venue+${index+1}`;
   };
 
   if (loading) {
@@ -128,7 +129,7 @@ export default function VenueList() {
         background: 'radial-gradient(circle, rgba(14, 165, 233, 0.1) 0%, transparent 70%)',
         zIndex: 0
       }} />
-      
+
       <Box sx={{
         position: 'absolute',
         bottom: '-10%',
@@ -154,7 +155,7 @@ export default function VenueList() {
         >
           All Venues
         </Typography>
-        
+
         {venues.length === 0 ? (
           <Box sx={{ 
             display: 'flex', 
@@ -202,27 +203,32 @@ export default function VenueList() {
                   width: '100%',
                 }}
               >
-                <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row' }}>
-                  <CardMedia
-                    component="img"
-                    height={isMobile ? "200" : "220"}
-                    image={venue.image_url || getPlaceholderImage(index)}
-                    alt={venue.name}
-                    sx={{ 
+                <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', minHeight: isMobile ? 200 : 220 }}>
+                  <Box
+                    sx={{
                       width: isMobile ? '100%' : '40%',
-                      objectFit: 'cover',
-                      position: 'relative'
+                      minHeight: isMobile ? 200 : 220,
+                      position: 'relative',
+                      flexShrink: 0,
                     }}
-                    onLoad={() => {
-                      document.querySelector(`#venue-img-${venue.id}`)?.setAttribute('data-loaded', 'true');
-                    }}
-                    id={`venue-img-${venue.id}`}
-                  />
-                  <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
+                  >
+                    <CardMedia
+                      component="img"
+                      image={venue.image_url || getPlaceholderImage(index)}
+                      alt={venue.name}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
                     flex: 1,
-                    p: 3 
+                    p: 3
                   }}>
                     <Box sx={{ flexGrow: 1 }}>
                       <Typography 
@@ -234,14 +240,14 @@ export default function VenueList() {
                       >
                         {venue.name}
                       </Typography>
-                      
+
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                         <LocationOn sx={{ color: '#6366F1', mr: 1 }} />
                         <Typography variant="h6" color="text.secondary">
                           {venue.address}
                         </Typography>
                       </Box>
-                      
+
                       {venue.phone && (
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                           <Phone sx={{ color: '#0EA5E9', mr: 1 }} />
@@ -250,14 +256,14 @@ export default function VenueList() {
                           </Typography>
                         </Box>
                       )}
-                      
+
                       {venue.description && (
                         <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
                           {venue.description}
                         </Typography>
                       )}
                     </Box>
-                    
+
                     <Box sx={{ mt: 3, alignSelf: 'flex-end' }}>
                       <MotionButton
                         component={Link}

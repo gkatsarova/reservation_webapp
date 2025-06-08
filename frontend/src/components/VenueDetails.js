@@ -98,7 +98,7 @@ export default function VenueDetails() {
     e.preventDefault();
     try {
       const payload = { text: newComment };
-      if (isCustomer) payload.rating = newRating;
+      if (isCustomer && !isOwner) payload.rating = newRating;
       await apiClient.post(`/venues/${id}/comments`, payload);
       setNewComment('');
       setNewRating(5);
@@ -408,24 +408,6 @@ export default function VenueDetails() {
                   </Box>
                 )}
                 
-                {venue.image_url && (
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="h6" fontWeight="600" sx={{ mb: 1 }}>
-                      Restaurant Image:
-                    </Typography>
-                    <CardMedia
-                      component="img"
-                      image={venue.image_url}
-                      alt="Restaurant"
-                      sx={{
-                        borderRadius: 2,
-                        maxHeight: 300,
-                        objectFit: 'contain'
-                      }}
-                    />
-                  </Box>
-                )}
-                
                 {venue.menu_image_url && (
                   <Box sx={{ mb: 3 }}>
                     <Typography variant="h6" fontWeight="600" sx={{ mb: 1 }}>
@@ -657,7 +639,7 @@ export default function VenueDetails() {
                 Submit Review
               </MotionButton>
             </Box>
-          ) : !isOwner && (
+          ) : isOwner ? (
             <Box component="form" onSubmit={handleCommentSubmit} sx={{ mb: 4, p: 3, borderRadius: 2, background: 'rgba(99, 102, 241, 0.05)' }}>
               <Typography variant="h6" fontWeight="600" sx={{ mb: 2 }}>
                 Add Your Comment
@@ -689,12 +671,14 @@ export default function VenueDetails() {
                 Submit Comment
               </MotionButton>
             </Box>
-          )}
+          ) : null}
           
           {comments.length === 0 ? (
-            <Typography variant="body1" sx={{ textAlign: 'center', py: 4 }}>
-              No reviews yet. Be the first to leave a review!
-            </Typography>
+            !isOwner && (
+              <Typography variant="body1" sx={{ textAlign: 'center', py: 4 }}>
+                No reviews yet. Be the first to leave a review!
+              </Typography>
+            )
           ) : (
             <Grid container spacing={3}>
               {comments.map((comment, index) => (
