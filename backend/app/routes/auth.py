@@ -1,9 +1,10 @@
 from flask import request
 from flask_restx import Resource, fields, Namespace
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from datetime import timedelta
 from ..extensions import api, db
 from ..models import User, UserType
+from flask import make_response
 
 ns = Namespace('auth', description='Authentication operations')
 
@@ -89,9 +90,26 @@ class Register(Resource):
             )
             return {
                 'message': 'Successfully registered',
-                'access_token': access_token
+                'access_token': access_token,
+                'user_id': user.id,
+                'username': user.username,
+                'user_type': user.user_type.value
             }, 201
 
         except Exception as e:
             db.session.rollback()
             return {'message': f'Error with registration: {str(e)}'}, 500
+
+@ns.route('/users/<int:user_id>')
+class UserDelete(Resource):
+    @jwt_required()
+    def delete(self, user_id):
+        current_user_id = get_jwt_identity()
+        if int(current_user_id) != int(user_id):
+            return {'message': 'No permission to delete this user'}, 403
+        user = User.query.get(user_id)
+        if not user:
+            return {'message': 'User not found'}, 404
+        db.session.delete(user)
+        db.session.commit()
+        return {'message': 'User deleted'}, 200

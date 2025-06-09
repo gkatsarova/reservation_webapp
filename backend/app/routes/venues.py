@@ -5,6 +5,7 @@ from ..extensions import db
 from flask import request
 from datetime import datetime
 import requests
+from sqlalchemy import func
 
 ns = Namespace('venues', description='Venue operations')
 
@@ -17,6 +18,7 @@ venue_model = ns.model('Venue', {
     'email': fields.String(description='Email of the venue'),
     'weekdays_hours': fields.String(required=True, description='Working hours for weekdays, format HH:MM-HH:MM'),
     'weekend_hours': fields.String(required=True, description='Working hours for weekend, format HH:MM-HH:MM'),
+    'image_url': fields.String(required=False, description='URL for restaurant image'), 
     'menu_image_url': fields.String(required=False, description='URL for menu image'),
     'venue_type': fields.String(attribute=lambda x: x.venue_type.value, required=True, description='Type of the venue (restaurant, bar, cafe, etc.)'),
     'latitude': fields.Float,
@@ -106,8 +108,6 @@ class VenueListCreate(Resource):
 
         if Venue.query.filter_by(name=data['name']).first():
             return {'message': 'Venue with this name already exists.'}, 400
-        if Venue.query.filter_by(address=data['address']).first():
-            return {'message': 'Venue with this address already exists.'}, 400
         if Venue.query.filter_by(phone=data['phone']).first():
             return {'message': 'Venue with this phone already exists.'}, 400
         if Venue.query.filter_by(email=data['email']).first():
@@ -126,6 +126,11 @@ class VenueListCreate(Resource):
         if lat is None or lon is None:
             return {'message': 'Address does not exist or is invalid.'}, 400
 
+        address = data['address'].strip().lower()
+        existing = Venue.query.filter(func.lower(func.trim(Venue.address)) == address).first()
+        if existing:
+            return {'message': 'Venue with this address already exists.'}, 400
+
         venue = Venue(
             owner_id=user.id,
             name=data['name'],
@@ -134,6 +139,7 @@ class VenueListCreate(Resource):
             email=data.get('email'),
             weekdays_hours=weekdays_hours,
             weekend_hours=weekend_hours,
+            image_url=data.get('image_url'),
             menu_image_url=data.get('menu_image_url'),
             venue_type=VenueType(data['type']),
             latitude=lat,
