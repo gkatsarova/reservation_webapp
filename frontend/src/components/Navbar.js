@@ -1,9 +1,10 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Box, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
+import { AppBar, Toolbar, Typography, Box } from '@mui/material';
 import { motion } from 'framer-motion';
 import { Logout, Delete } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiClient } from '../api/client';
+import ConfirmDeleteDialog from './ConfirmDeleteDialog';
 
 const MotionButton = motion('button');
 
@@ -31,6 +32,7 @@ export default function Navbar({ setToken, setUserType, setUsername }) {
     } catch (err) {
       alert('Error deleting profile');
     }
+    setOpen(false);
   };
 
   return (
@@ -109,22 +111,13 @@ export default function Navbar({ setToken, setUserType, setUsername }) {
           </Box>
         </Toolbar>
       </AppBar>
-      <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>Delete Profile</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete your profile? This action cannot be undone!
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleDeleteProfile} color="error" variant="contained">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmDeleteDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        onConfirm={handleDeleteProfile}
+        title="Delete Profile"
+        text="Are you sure you want to delete your profile? This action cannot be undone!"
+      />
     </>
   );
 }

@@ -198,15 +198,24 @@ class VenueComments(Resource):
     def post(self, venue_id):
         data = request.get_json()
         user_id = get_jwt_identity()
+        user = User.query.get(user_id)
         text = data.get('text', '').strip()
         rating = data.get('rating')
-        if not text or not rating or not (1 <= int(rating) <= 5):
-            return {'message': 'Text and rating (1-5) are required.'}, 400
+
+        if not text:
+            return {'message': 'Text is required.'}, 400
+
+        if user.user_type == UserType.CUSTOMER:
+            if rating is None or not (1 <= int(rating) <= 5):
+                return {'message': 'Rating (1-5) is required for customers.'}, 400
+        else:
+            rating = None
+
         comment = VenueComment(
             venue_id=venue_id,
             user_id=user_id,
             text=text,
-            rating=int(rating)
+            rating=int(rating) if rating is not None else None
         )
         db.session.add(comment)
         db.session.commit()
@@ -223,8 +232,14 @@ class VenueCommentDelete(Resource):
         comment = VenueComment.query.filter_by(id=comment_id, venue_id=venue_id).first()
         if not comment:
             return {'message': 'Comment not found'}, 404
-        if comment.user_id != int(user_id):
+
+        venue = Venue.query.get(venue_id)
+        if not venue:
+            return {'message': 'Venue not found'}, 404
+
+        if comment.user_id != int(user_id) and venue.owner_id != int(user_id):
             return {'message': 'No permission to delete this comment'}, 403
+
         db.session.delete(comment)
         db.session.commit()
         return {'message': 'Comment deleted'}, 200

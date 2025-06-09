@@ -76,7 +76,7 @@ class VenueComment(db.Model):
     venue_id = db.Column(db.Integer, db.ForeignKey('venues.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     text = db.Column(db.Text, nullable=False)
-    rating = db.Column(db.Integer, nullable=False) 
+    rating = db.Column(db.Integer) 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     venue = db.relationship('Venue', back_populates='comments')
     user = db.relationship('User')

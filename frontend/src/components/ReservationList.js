@@ -27,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { apiClient } from '../api/client';
+import ConfirmDeleteDialog from './ConfirmDeleteDialog';
 
 const MotionCard = motion(Card);
 const MotionButton = motion(Button);
@@ -36,6 +37,8 @@ export default function ReservationList({ setToken, setUserType, setUsername }) 
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedReservationId, setSelectedReservationId] = useState(null);
   const userType = localStorage.getItem('user_type');
   const userId = Number(localStorage.getItem('user_id'));
 
@@ -57,16 +60,18 @@ export default function ReservationList({ setToken, setUserType, setUsername }) 
     fetchReservations();
   }, []);
 
-  const handleDelete = async (reservationId) => {
-    if (!window.confirm('Are you sure you want to delete this reservation?')) return;
+  const handleDelete = async () => {
     try {
       const token = localStorage.getItem('token');
-      await apiClient.delete(`/reservations/${reservationId}`, {
+      await apiClient.delete(`/reservations/${selectedReservationId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setReservations(reservations.filter(r => r.id !== reservationId));
+      setReservations(reservations.filter(r => r.id !== selectedReservationId));
     } catch (error) {
       alert('Error deleting reservation');
+    } finally {
+      setDeleteDialogOpen(false);
+      setSelectedReservationId(null);
     }
   };
 
@@ -346,7 +351,10 @@ export default function ReservationList({ setToken, setUserType, setUsername }) 
                           
                           {userType === 'customer' && r.customer_id === userId && (
                             <IconButton
-                              onClick={() => handleDelete(r.id)}
+                              onClick={() => {
+                                setSelectedReservationId(r.id);
+                                setDeleteDialogOpen(true);
+                              }}
                               sx={{
                                 background: 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)',
                                 color: 'white',
@@ -369,6 +377,14 @@ export default function ReservationList({ setToken, setUserType, setUsername }) 
           )}
         </Box>
       </Box>
+
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Reservation"
+        text="Are you sure you want to delete this reservation? This action cannot be undone!"
+      />
     </>
   );
 }

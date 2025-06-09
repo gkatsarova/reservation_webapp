@@ -37,6 +37,7 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import Navbar from './Navbar';
+import ConfirmDeleteDialog from './ConfirmDeleteDialog';
 
 const MotionBox = motion(Box);
 const MotionButton = motion(Button);
@@ -66,6 +67,9 @@ export default function VenueDetails({ setToken, setUserType, setUsername }) {
   const [coords, setCoords] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteCommentDialogOpen, setDeleteCommentDialogOpen] = useState(false);
+  const [selectedCommentId, setSelectedCommentId] = useState(null);
 
   useEffect(() => {
     const fetchVenue = async () => {
@@ -98,8 +102,12 @@ export default function VenueDetails({ setToken, setUserType, setUsername }) {
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = { text: newComment };
-      if (isCustomer && !isOwner) payload.rating = newRating;
+      let payload = { text: newComment };
+      if (isCustomer && !isOwner) {
+        payload.rating = newRating;
+      } else {
+        payload.rating = null;
+      }
       await apiClient.post(`/venues/${id}/comments`, payload);
       setNewComment('');
       setNewRating(5);
@@ -110,31 +118,30 @@ export default function VenueDetails({ setToken, setUserType, setUsername }) {
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this venue?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await apiClient.delete(`/venues/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        alert('Venue deleted');
-        navigate('/venues');
-      } catch (error) {
-        alert('Error deleting venue');
-      }
+    try {
+      const token = localStorage.getItem('token');
+      await apiClient.delete(`/venues/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert('Venue deleted');
+      navigate('/venues');
+    } catch (error) {
+      alert('Error deleting venue');
     }
-  }
+  };
 
-  const handleDeleteComment = async (commentId) => {
-    if (window.confirm('Are you sure you want to delete this comment?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await apiClient.delete(`/venues/${id}/comments/${commentId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        fetchComments();
-      } catch (error) {
-        alert('Error deleting comment');
-      }
+  const handleDeleteComment = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await apiClient.delete(`/venues/${id}/comments/${selectedCommentId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchComments();
+    } catch (error) {
+      alert('Error deleting comment');
+    } finally {
+      setDeleteCommentDialogOpen(false);
+      setSelectedCommentId(null);
     }
   };
 
@@ -452,7 +459,7 @@ export default function VenueDetails({ setToken, setUserType, setUsername }) {
                     {isOwner && (
                       <MotionButton
                         variant="contained"
-                        onClick={handleDelete}
+                        onClick={() => setDeleteDialogOpen(true)}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         sx={{
@@ -689,21 +696,28 @@ export default function VenueDetails({ setToken, setUserType, setUsername }) {
                     <Paper sx={{ p: 3, borderRadius: 2, background: '#F8FAFC' }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Rating
-                            value={comment.rating}
-                            readOnly
-                            icon={<Star sx={{ color: '#F59E0B' }} fontSize="inherit" />}
-                            emptyIcon={<StarBorder sx={{ color: '#F59E0B' }} fontSize="inherit" />}
-                          />
-                          <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                            ({comment.rating}/5)
-                          </Typography>
+                          {comment.user_id !== venue.owner_id && (
+                            <>
+                              <Rating
+                                value={comment.rating}
+                                readOnly
+                                icon={<Star sx={{ color: '#F59E0B' }} fontSize="inherit" />}
+                                emptyIcon={<StarBorder sx={{ color: '#F59E0B' }} fontSize="inherit" />}
+                              />
+                              <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                                ({comment.rating}/5)
+                              </Typography>
+                            </>
+                          )}
                         </Box>
                         
-                        {Number(localStorage.getItem('user_id')) === comment.user_id && (
-                          <IconButton 
-                            size="small" 
-                            onClick={() => handleDeleteComment(comment.id)}
+                        {(isOwner || Number(localStorage.getItem('user_id')) === comment.user_id) && (
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setSelectedCommentId(comment.id);
+                              setDeleteCommentDialogOpen(true);
+                            }}
                             sx={{ color: '#EF4444' }}
                           >
                             <Delete fontSize="small" />
@@ -726,6 +740,25 @@ export default function VenueDetails({ setToken, setUserType, setUsername }) {
           </Card>
         </Box>
       </Box>
+
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={() => {
+          setDeleteDialogOpen(false);
+          handleDelete();
+        }}
+        title="Delete Venue"
+        text="Are you sure you want to delete this venue? This action cannot be undone!"
+      />
+
+      <ConfirmDeleteDialog
+        open={deleteCommentDialogOpen}
+        onClose={() => setDeleteCommentDialogOpen(false)}
+        onConfirm={handleDeleteComment}
+        title="Delete Comment"
+        text="Are you sure you want to delete this comment? This action cannot be undone!"
+      />
     </>
   );
 }
