@@ -70,7 +70,6 @@ def test_login_invalid_credentials(client, init_database, register_user):
     assert 'Invalid data' in response.get_json()['message']
 
 def test_delete_user_success(client, init_database, register_user):
-    # Register and login as user
     register_response = register_user('testuser', 'test@example.com', 'Password123')
     user_id = register_response.get_json()['user_id']
     login_response = client.post('/api/auth/login', json={
@@ -79,27 +78,23 @@ def test_delete_user_success(client, init_database, register_user):
     })
     token = login_response.get_json()['access_token']
     
-    # Delete user
     response = client.delete(f'/api/auth/users/{user_id}', 
                            headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert response.get_json()['message'] == 'User deleted'
 
 def test_delete_user_no_permission(client, init_database, register_user):
-    # Register two users
     user1_response = register_user('user1', 'u1@example.com', 'Password123')
     user1_id = user1_response.get_json()['user_id']
     user2_response = register_user('user2', 'u2@example.com', 'Password123')
     user2_id = user2_response.get_json()['user_id']
     
-    # Login as user2
     login_response = client.post('/api/auth/login', json={
         'email': 'u2@example.com',
         'password': 'Password123'
     })
     token = login_response.get_json()['access_token']
     
-    # Try to delete user1 as user2
     response = client.delete(f'/api/auth/users/{user1_id}', 
                            headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 403

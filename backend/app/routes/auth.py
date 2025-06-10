@@ -8,7 +8,15 @@ from flask import make_response
 
 ns = Namespace('auth', description='Authentication operations')
 
+user_model = ns.model('User', {
+    'username': fields.String(required=True, description='Username'),
+    'email': fields.String(required=True, description='Email address'),
+    'password': fields.String(required=True, description='Password'),
+    'user_type': fields.String(required=True, enum=[t.value for t in UserType], description='Type of user')
+})
+
 login_model = ns.model('Login', {
+    'username': fields.String(required=True, description='Username'),
     'email': fields.String(
         required=True,
         pattern=r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'

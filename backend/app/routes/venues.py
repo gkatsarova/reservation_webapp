@@ -1,11 +1,11 @@
-from flask_restx import Namespace, Resource, fields
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from ..models import Venue, User, UserType, VenueType,VenueComment
-from ..extensions import db
 from flask import request
+from flask_restx import Resource, fields, Namespace
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
-import requests
+from ..models import Venue, User, VenueComment, VenueType, UserType
+from ..extensions import db
 from sqlalchemy import func
+import requests
 
 ns = Namespace('venues', description='Venue operations')
 
@@ -25,6 +25,11 @@ venue_model = ns.model('Venue', {
     'longitude': fields.Float
 })
 
+venue_response = ns.model('VenueResponse', {
+    'message': fields.String,
+    'id': fields.Integer
+})
+
 comment_model = ns.model('VenueComment', {
     'id': fields.Integer,
     'venue_id': fields.Integer,
@@ -37,11 +42,6 @@ comment_model = ns.model('VenueComment', {
 
 def enum_to_val(enum_obj):
     return enum_obj.value if enum_obj else None
-
-venue_response = ns.model('VenueResponse', {
-    'message': fields.String,
-    'id': fields.Integer
-})
 
 def validate_hours(hours_str):
     try:
@@ -74,7 +74,7 @@ class VenueListCreate(Resource):
     @jwt_required()
     def get(self):
         current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
+        user = db.session.get(User, current_user_id)
         if not user:
             return {'message': 'User not found'}, 404
         
@@ -85,7 +85,6 @@ class VenueListCreate(Resource):
 
         return venues
 
-    @ns.doc(security='Bearer')
     @jwt_required()
     @ns.expect(venue_model)
     @ns.response(201, 'Venue created successfully', venue_response)
@@ -93,7 +92,7 @@ class VenueListCreate(Resource):
     @ns.response(403, 'Not authorized')
     def post(self):
         current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
+        user = db.session.get(User, current_user_id)
         if not user:
             return {'message': 'User not found'}, 404
 
@@ -145,7 +144,7 @@ class VenueListCreate(Resource):
             latitude=lat,
             longitude=lon 
         )
-
+        
         try:
             db.session.add(venue)
             db.session.commit()
@@ -161,7 +160,9 @@ class VenueDetail(Resource):
     @ns.response(404, 'Venue not found')
     @jwt_required()
     def get(self, venue_id):
-        venue = Venue.query.get_or_404(venue_id)
+        venue = db.session.get(Venue, venue_id)
+        if not venue:
+            return {'message': 'Venue not found'}, 404
         return venue
     
     @ns.response(200, 'Venue deleted')
@@ -170,12 +171,12 @@ class VenueDetail(Resource):
     @jwt_required()
     def delete(self, venue_id):
         current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
+        user = db.session.get(User, current_user_id)
         if not user:
             return {'message': 'User not found'}, 404
 
-        venue = Venue.query.get_or_404(venue_id)
-        if venue.owner_id != user.id:
+        venue = db.session.get(Venue, venue_id)
+        if not venue or venue.owner_id != user.id:
             return {'message': 'Do not have permission'}, 403
 
         try:
@@ -185,7 +186,7 @@ class VenueDetail(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': f'Error with deleting: {str(e)}'}, 500
-        
+
 @ns.route('/<int:venue_id>/comments')
 class VenueComments(Resource):
     @ns.marshal_list_with(comment_model)
@@ -198,7 +199,7 @@ class VenueComments(Resource):
     def post(self, venue_id):
         data = request.get_json()
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         text = data.get('text', '').strip()
         rating = data.get('rating')
 
@@ -220,7 +221,7 @@ class VenueComments(Resource):
         db.session.add(comment)
         db.session.commit()
         return {'message': 'Comment added.'}, 201
-    
+
 @ns.route('/<int:venue_id>/comments/<int:comment_id>')
 class VenueCommentDelete(Resource):
     @jwt_required()
@@ -233,7 +234,7 @@ class VenueCommentDelete(Resource):
         if not comment:
             return {'message': 'Comment not found'}, 404
 
-        venue = Venue.query.get(venue_id)
+        venue = db.session.get(Venue, venue_id)
         if not venue:
             return {'message': 'Venue not found'}, 404
 

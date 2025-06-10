@@ -76,7 +76,6 @@ def test_create_venue_success(client, owner_token, init_database):
     assert data['message'] == 'Venue created successfully'
 
 def test_create_venue_duplicate_name(client, owner_token, init_database):
-    # Create first venue
     data = {
         "name": "Duplicate Venue",
         "address": "Sofia, Bulgaria",
@@ -90,7 +89,6 @@ def test_create_venue_duplicate_name(client, owner_token, init_database):
                 json=data, 
                 headers={"Authorization": f"Bearer {owner_token}"})
     
-    # Try to create venue with same name
     data["email"] = "venue2@example.com"
     data["phone"] = "9876543210"
     response = client.post('/api/venues/', 
@@ -100,7 +98,6 @@ def test_create_venue_duplicate_name(client, owner_token, init_database):
     assert 'Venue with this name already exists' in response.get_json()['message']
 
 def test_create_venue_duplicate_email(client, owner_token, init_database):
-    # Create first venue
     data = {
         "name": "Venue 1",
         "address": "Sofia, Bulgaria",
@@ -114,7 +111,6 @@ def test_create_venue_duplicate_email(client, owner_token, init_database):
                 json=data, 
                 headers={"Authorization": f"Bearer {owner_token}"})
     
-    # Try to create venue with same email
     data["name"] = "Venue 2"
     data["phone"] = "9876543210"
     response = client.post('/api/venues/', 
@@ -140,7 +136,6 @@ def test_create_venue_unauthorized(client, customer_token, init_database):
     assert 'Only owner can create venues' in response.get_json()['message']
 
 def test_get_venues_as_owner(client, owner_token, init_database):
-    # Create a venue first
     data = {
         "name": "Owner's Venue",
         "address": "Sofia, Bulgaria",
@@ -155,7 +150,6 @@ def test_get_venues_as_owner(client, owner_token, init_database):
                                 headers={"Authorization": f"Bearer {owner_token}"})
     venue_id = create_response.get_json()['id']
     
-    # Get venues
     response = client.get('/api/venues/', 
                          headers={"Authorization": f"Bearer {owner_token}"})
     assert response.status_code == 200
@@ -164,7 +158,6 @@ def test_get_venues_as_owner(client, owner_token, init_database):
     assert any(v['id'] == venue_id for v in venues)
 
 def test_get_venues_as_customer(client, owner_token, customer_token, init_database):
-    # Create a venue first
     data = {
         "name": "Customer's Venue",
         "address": "Sofia, Bulgaria",
@@ -179,7 +172,6 @@ def test_get_venues_as_customer(client, owner_token, customer_token, init_databa
                                 headers={"Authorization": f"Bearer {owner_token}"})
     venue_id = create_response.get_json()['id']
     
-    # Get venues as customer
     response = client.get('/api/venues/', 
                          headers={"Authorization": f"Bearer {customer_token}"})
     assert response.status_code == 200
@@ -188,7 +180,6 @@ def test_get_venues_as_customer(client, owner_token, customer_token, init_databa
     assert any(v['id'] == venue_id for v in venues)
 
 def test_delete_venue_success(client, owner_token, init_database):
-    # Create a venue first
     data = {
         "name": "To Delete Venue",
         "address": "Sofia, Bulgaria",
@@ -203,14 +194,12 @@ def test_delete_venue_success(client, owner_token, init_database):
                                 headers={"Authorization": f"Bearer {owner_token}"})
     venue_id = create_response.get_json()['id']
     
-    # Delete venue
     response = client.delete(f'/api/venues/{venue_id}', 
                            headers={"Authorization": f"Bearer {owner_token}"})
     assert response.status_code == 200
     assert response.get_json()['message'] == 'Venue is deleted'
 
 def test_delete_venue_unauthorized(client, owner_token, customer_token, init_database):
-    # Create a venue first
     data = {
         "name": "Not To Delete Venue",
         "address": "Sofia, Bulgaria",
@@ -225,7 +214,6 @@ def test_delete_venue_unauthorized(client, owner_token, customer_token, init_dat
                                 headers={"Authorization": f"Bearer {owner_token}"})
     venue_id = create_response.get_json()['id']
     
-    # Try to delete as customer
     response = client.delete(f'/api/venues/{venue_id}', 
                            headers={"Authorization": f"Bearer {customer_token}"})
     assert response.status_code == 403
