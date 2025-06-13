@@ -54,6 +54,23 @@ class Venue(db.Model):
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'owner_id': self.owner_id,
+            'name': self.name,
+            'address': self.address,
+            'phone': self.phone,
+            'email': self.email,
+            'weekdays_hours': self.weekdays_hours,
+            'weekend_hours': self.weekend_hours,
+            'image_url': self.image_url,
+            'menu_image_url': self.menu_image_url,
+            'type': self.venue_type.value,
+            'latitude': self.latitude,
+            'longitude': self.longitude
+        }
+
 class Reservation(db.Model):
     __tablename__ = 'reservations'
     id = db.Column(db.Integer, primary_key=True)
