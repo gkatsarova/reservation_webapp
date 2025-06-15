@@ -29,5 +29,5 @@ services:
 databases:
   - name: reservation-db
     databaseName: reservationsdb
-    user: postgres
+    user: reservation_user
     plan: free 
