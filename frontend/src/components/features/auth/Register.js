@@ -18,7 +18,7 @@ import {
   Lock,
   ArrowForward
 } from '@mui/icons-material';
-import { apiClient } from '../api/client';
+import { apiClient } from '../../../api/client';
 
 const MotionBox = motion(Box);
 const MotionButton = motion(Button);

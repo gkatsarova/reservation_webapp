@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Navbar from './Navbar';
+import Navbar from '../../layout/Navbar';
 import { 
   Box, 
   Typography, 
@@ -26,7 +26,8 @@ import {
   Person
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
-import { apiClient } from '../api/client';
+import { apiClient } from '../../../api/client';
+import ConfirmDeleteDialog from '../../common/ConfirmDeleteDialog';
 
 const MotionCard = motion(Card);
 const MotionButton = motion(Button);
@@ -36,56 +37,61 @@ export default function ReservationList({ setToken, setUserType, setUsername }) 
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedReservationId, setSelectedReservationId] = useState(null);
   const userType = localStorage.getItem('user_type');
   const userId = Number(localStorage.getItem('user_id'));
 
-  useEffect(() => {
-    const fetchReservations = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem('token');
-        const response = await apiClient.get('/reservations/', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setReservations(response.data);
-      } catch (error) {
-        console.error('Error loading reservations:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchReservations();
-  }, []);
-
-  const handleDelete = async (reservationId) => {
-    if (!window.confirm('Are you sure you want to delete this reservation?')) return;
+  const fetchReservations = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await apiClient.delete(`/reservations/${reservationId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setReservations(reservations.filter(r => r.id !== reservationId));
+      const response = await apiClient.get('/reservations/');
+      setReservations(response.data);
     } catch (error) {
-      alert('Error deleting reservation');
+      console.error('Error fetching reservations:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleStatusChange = async (reservationId, status) => {
+  useEffect(() => {
+    fetchReservations();
+  }, []);
+
+  const handleDelete = async () => {
     try {
       const token = localStorage.getItem('token');
-      await apiClient.patch(`/reservations/${reservationId}/status`, { status }, {
+      await apiClient.delete(`/reservations/${selectedReservationId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setReservations(reservations.map(r => 
-        r.id === reservationId ? { ...r, status } : r
-      ));
+      setReservations(reservations.filter(r => r.id !== selectedReservationId));
     } catch (error) {
-      alert('Error updating status');
+      alert('Error deleting reservation');
+    } finally {
+      setDeleteDialogOpen(false);
+      setSelectedReservationId(null);
+    }
+  };
+
+  const handleStatusChange = async (reservationId, newStatus) => {
+    try {
+      const response = await apiClient.patch(`/reservations/${reservationId}/status`, {
+        status: newStatus.toUpperCase()
+      });
+      
+      setReservations(prevReservations => 
+        prevReservations.map(reservation => 
+          reservation.id === reservationId 
+            ? { ...reservation, status: newStatus.toLowerCase() }
+            : reservation
+        )
+      );
+    } catch (error) {
+      alert(error.response?.data?.message || 'Error updating reservation status');
     }
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'confirmed': return 'success';
       case 'pending': return 'warning';
       case 'cancelled': return 'error';
@@ -346,7 +352,10 @@ export default function ReservationList({ setToken, setUserType, setUsername }) 
                           
                           {userType === 'customer' && r.customer_id === userId && (
                             <IconButton
-                              onClick={() => handleDelete(r.id)}
+                              onClick={() => {
+                                setSelectedReservationId(r.id);
+                                setDeleteDialogOpen(true);
+                              }}
                               sx={{
                                 background: 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)',
                                 color: 'white',
@@ -369,6 +378,14 @@ export default function ReservationList({ setToken, setUserType, setUsername }) 
           )}
         </Box>
       </Box>
+
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Reservation"
+        text="Are you sure you want to delete this reservation? This action cannot be undone!"
+      />
     </>
   );
 }

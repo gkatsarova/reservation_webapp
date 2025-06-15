@@ -20,7 +20,7 @@ import {
   Lock,
   ArrowForward
 } from '@mui/icons-material';
-import { apiClient } from '../api/client';
+import { apiClient } from '../../../api/client';
 
 const MotionBox = motion(Box);
 const MotionButton = motion(Button);
@@ -230,7 +230,7 @@ export default function Login({ setToken, setUserType, setUsername }) {
           color: '#64748B'
         }}>
           <Typography variant="body2">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link 
               href="/register" 
               sx={{ 

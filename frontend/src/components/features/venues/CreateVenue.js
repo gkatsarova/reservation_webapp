@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Navbar from './Navbar';
+import Navbar from '../../layout/Navbar';
 import { 
   Box, 
   Typography, 
@@ -13,7 +13,8 @@ import {
   Paper,
   useTheme,
   useMediaQuery,
-  CircularProgress
+  CircularProgress,
+  InputAdornment
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { 
@@ -29,7 +30,7 @@ import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-lea
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { Link, useNavigate } from 'react-router-dom';
-import { apiClient } from '../api/client';
+import { apiClient } from '../../../api/client';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -38,7 +39,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-const MotionBox = motion(Box);
 const MotionButton = motion(Button);
 
 function SetMapView({ coords }) {
@@ -79,9 +79,22 @@ export default function CreateVenue({ setToken, setUserType, setUsername }) {
   });
   const [coords, setCoords] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [menuImagePreview, setMenuImagePreview] = useState(null);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleImageUrlChange = (e, type) => {
+    const url = e.target.value;
+    if (type === 'venue') {
+      setFormData(prev => ({ ...prev, image_url: url }));
+      setImagePreview(url);
+    } else {
+      setFormData(prev => ({ ...prev, menu_image_url: url }));
+      setMenuImagePreview(url);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -93,14 +106,29 @@ export default function CreateVenue({ setToken, setUserType, setUsername }) {
       setLoading(false);
       return;
     }
+
+    if (!coords) {
+      alert('Please select a location on the map!');
+      setLoading(false);
+      return;
+    }
     
     try {
-      const response = await apiClient.post('/venues/', formData, {
+      const venueData = {
+        ...formData,
+        latitude: parseFloat(coords[0]),
+        longitude: parseFloat(coords[1])
+      };
+
+      console.log('Sending venue data:', venueData); 
+
+      const response = await apiClient.post('/venues/', venueData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Venue created successfully!');
       navigate(`/venues/${response.data.id}`);
     } catch (error) {
+      console.error('Error creating venue:', error); 
       alert(
         'Error creating venue: ' +
           (error.response?.data?.message || error.message)
@@ -115,7 +143,10 @@ export default function CreateVenue({ setToken, setUserType, setUsername }) {
       const resp = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(formData.address)}&format=json&limit=1`);
       const data = await resp.json();
       if (data && data[0]) {
-        setCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+        setCoords([lat, lon]);
+        console.log('Coordinates set:', [lat, lon]); 
       } else {
         setCoords(null);
         alert('Address not found on map!');
@@ -266,7 +297,6 @@ export default function CreateVenue({ setToken, setUserType, setUsername }) {
                   />
                 </Grid>
                 
-                {/* Second Column */}
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
@@ -280,74 +310,107 @@ export default function CreateVenue({ setToken, setUserType, setUsername }) {
                     }}
                   />
                   
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    sx={{ mb: 2 }}
-                    InputProps={{
-                      startAdornment: <Email sx={{ color: '#64748B', mr: 1 }} />
-                    }}
-                  />
-                  
-                  <TextField
-                    fullWidth
-                    label="Venue Image URL"
-                    name="image_url"
-                    value={formData.image_url}
-                    onChange={handleChange}
-                    sx={{ mb: 2 }}
-                    InputProps={{
-                      startAdornment: <Image sx={{ color: '#64748B', mr: 1 }} />
-                    }}
-                  />
-                </Grid>
-                
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Weekdays Hours (HH:MM-HH:MM)"
-                    name="weekdays_hours"
-                    value={formData.weekdays_hours}
-                    onChange={handleChange}
-                    placeholder="e.g., 09:00-18:00"
-                    sx={{ mb: 2 }}
-                    InputProps={{
-                      startAdornment: <Schedule sx={{ color: '#64748B', mr: 1 }} />
-                    }}
-                  />
-                </Grid>
-                
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Weekend Hours (HH:MM-HH:MM)"
-                    name="weekend_hours"
-                    value={formData.weekend_hours}
-                    onChange={handleChange}
-                    placeholder="e.g., 10:00-22:00"
-                    sx={{ mb: 2 }}
-                    InputProps={{
-                      startAdornment: <Schedule sx={{ color: '#64748B', mr: 1 }} />
-                    }}
-                  />
-                </Grid>
-                
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Menu Image URL"
-                    name="menu_image_url"
-                    value={formData.menu_image_url}
-                    onChange={handleChange}
-                    sx={{ mb: 2 }}
-                    InputProps={{
-                      startAdornment: <Image sx={{ color: '#64748B', mr: 1 }} />
-                    }}
-                  />
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      sx={{ mb: 2 }}
+                      InputProps={{
+                        startAdornment: <Email sx={{ color: '#64748B', mr: 1 }} />
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Weekdays Hours"
+                      name="weekdays_hours"
+                      value={formData.weekdays_hours}
+                      onChange={handleChange}
+                      sx={{ mb: 2 }}
+                      InputProps={{
+                        startAdornment: <Schedule sx={{ color: '#64748B', mr: 1 }} />
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Weekend Hours"
+                      name="weekend_hours"
+                      value={formData.weekend_hours}
+                      onChange={handleChange}
+                      sx={{ mb: 2 }}
+                      InputProps={{
+                        startAdornment: <Schedule sx={{ color: '#64748B', mr: 1 }} />
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                      <FormControl fullWidth>
+                        <Typography variant="h6" sx={{ mb: 2 }}>Venue Image</Typography>
+                        <TextField
+                          fullWidth
+                          label="Image URL"
+                          name="image_url"
+                          value={formData.image_url}
+                          onChange={(e) => handleImageUrlChange(e, 'venue')}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Image />
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                        {imagePreview && (
+                          <Box sx={{ mt: 2, textAlign: 'center' }}>
+                            <img
+                              src={imagePreview}
+                              alt="Venue preview"
+                              style={{ maxWidth: '100%', maxHeight: '200px' }}
+                            />
+                          </Box>
+                        )}
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <FormControl fullWidth>
+                        <Typography variant="h6" sx={{ mb: 2 }}>Menu Image</Typography>
+                        <TextField
+                          fullWidth
+                          label="Menu Image URL"
+                          name="menu_image_url"
+                          value={formData.menu_image_url}
+                          onChange={(e) => handleImageUrlChange(e, 'menu')}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Image />
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                        {menuImagePreview && (
+                          <Box sx={{ mt: 2, textAlign: 'center' }}>
+                            <img
+                              src={menuImagePreview}
+                              alt="Menu preview"
+                              style={{ maxWidth: '100%', maxHeight: '200px' }}
+                            />
+                          </Box>
+                        )}
+                      </FormControl>
+                    </Grid>
+                  </Grid>
                 </Grid>
                 
                 <Grid item xs={12}>

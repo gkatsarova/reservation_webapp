@@ -3,16 +3,17 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 env_path = Path(__file__).resolve().parents[1] / '.env'
-load_dotenv()
+load_dotenv(env_path)
 
 class Config:
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///:memory:')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY') 
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'fallback-secret-key')
     
     DEBUG = os.getenv('DEBUG', 'False') == 'True'
-    required_env_vars = ['DATABASE_URL', 'JWT_SECRET_KEY']
-    for var in required_env_vars:
-        if not os.getenv(var):
-            raise ValueError(f"The: {var}")
+        
+class TestingConfig(Config):
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = os.getenv('TEST_DATABASE_URL', 'sqlite:///:memory:')
+    DEBUG = False

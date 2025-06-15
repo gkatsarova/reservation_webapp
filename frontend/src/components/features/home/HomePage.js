@@ -11,8 +11,8 @@ import {
   useMediaQuery
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Logout, Dashboard, CalendarToday, AddBusiness } from '@mui/icons-material';
-import Navbar from './Navbar';
+import {Dashboard, CalendarToday, AddBusiness } from '@mui/icons-material';
+import Navbar from '../../layout/Navbar';
 
 const MotionBox = motion(Box);
 const MotionButton = motion(Button);
@@ -29,16 +29,7 @@ export default function HomePage({ username, userType, setToken, setUserType, se
     if (!userType && storedType) setUserType(storedType);
   }, [username, setUsername, userType, setUserType]);
 
-  const displayUsername = username || storedUsername;
   const displayUserType = userType || storedType;
-
-  const handleLogout = () => {
-    localStorage.clear();
-    setToken(null);
-    setUserType(null);
-    setUsername(null);
-    navigate('/login');
-  };
 
   const actionButtons = [
     {
