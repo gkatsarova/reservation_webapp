@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Navbar from './Navbar';
+import Navbar from '../../layout/Navbar';
 import { 
   Box, 
   Typography, 
@@ -26,8 +26,8 @@ import {
   Person
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
-import { apiClient } from '../api/client';
-import ConfirmDeleteDialog from './ConfirmDeleteDialog';
+import { apiClient } from '../../../api/client';
+import ConfirmDeleteDialog from '../../common/ConfirmDeleteDialog';
 
 const MotionCard = motion(Card);
 const MotionButton = motion(Button);
@@ -42,21 +42,18 @@ export default function ReservationList({ setToken, setUserType, setUsername }) 
   const userType = localStorage.getItem('user_type');
   const userId = Number(localStorage.getItem('user_id'));
 
+  const fetchReservations = async () => {
+    try {
+      const response = await apiClient.get('/reservations/');
+      setReservations(response.data);
+    } catch (error) {
+      console.error('Error fetching reservations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchReservations = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem('token');
-        const response = await apiClient.get('/reservations/', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setReservations(response.data);
-      } catch (error) {
-        console.error('Error loading reservations:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchReservations();
   }, []);
 
@@ -75,22 +72,26 @@ export default function ReservationList({ setToken, setUserType, setUsername }) 
     }
   };
 
-  const handleStatusChange = async (reservationId, status) => {
+  const handleStatusChange = async (reservationId, newStatus) => {
     try {
-      const token = localStorage.getItem('token');
-      await apiClient.patch(`/reservations/${reservationId}/status`, { status }, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await apiClient.patch(`/reservations/${reservationId}/status`, {
+        status: newStatus.toUpperCase()
       });
-      setReservations(reservations.map(r => 
-        r.id === reservationId ? { ...r, status } : r
-      ));
+      
+      setReservations(prevReservations => 
+        prevReservations.map(reservation => 
+          reservation.id === reservationId 
+            ? { ...reservation, status: newStatus.toLowerCase() }
+            : reservation
+        )
+      );
     } catch (error) {
-      alert('Error updating status');
+      alert(error.response?.data?.message || 'Error updating reservation status');
     }
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'confirmed': return 'success';
       case 'pending': return 'warning';
       case 'cancelled': return 'error';

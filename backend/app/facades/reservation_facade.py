@@ -1,4 +1,4 @@
-from ..models import Reservation, Venue, User
+from ..models import Reservation, Venue, User, ReservationStatus
 from ..extensions import db
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
@@ -9,22 +9,23 @@ class ReservationFacade:
 
     def get_reservations_for_user(self, user):
         try:
-            if user.user_type == 'OWNER':
+            if user.user_type.value == 'owner':
                 venues = Venue.query.filter_by(owner_id=user.id).all()
                 venue_ids = [venue.id for venue in venues]
                 reservations = Reservation.query.filter(Reservation.venue_id.in_(venue_ids)).all()
             else:
-                reservations = Reservation.query.filter_by(user_id=user.id).all()
+                reservations = Reservation.query.filter_by(customer_id=user.id).all()
             
             return [{
                 'id': reservation.id,
                 'venue_id': reservation.venue_id,
-                'user_id': reservation.user_id,
-                'start_time': reservation.start_time.isoformat(),
-                'end_time': reservation.end_time.isoformat(),
+                'venue_name': Venue.query.get(reservation.venue_id).name,
+                'reservation_time': reservation.reservation_time.isoformat(),
                 'party_size': reservation.party_size,
-                'status': reservation.status,
-                'price': reservation.price
+                'notes': reservation.notes,
+                'status': reservation.status.value,
+                'customer_name': User.query.get(reservation.customer_id).username,
+                'customer_id': reservation.customer_id
             } for reservation in reservations]
         except Exception as e:
             print(f"Error getting reservations: {str(e)}")
@@ -36,24 +37,22 @@ class ReservationFacade:
             if not venue:
                 return False, "Venue not found"
 
-            required_fields = ['start_time', 'end_time', 'party_size']
+            required_fields = ['start_time', 'party_size']
             if not all(field in data for field in required_fields):
                 return False, "Missing required fields"
 
             try:
                 start_time = datetime.fromisoformat(data['start_time'])
-                end_time = datetime.fromisoformat(data['end_time'])
             except ValueError:
                 return False, "Invalid datetime format"
 
             reservation = Reservation(
                 venue_id=venue_id,
-                user_id=user.id,
-                start_time=start_time,
-                end_time=end_time,
+                customer_id=user.id,
+                reservation_time=start_time,
                 party_size=data['party_size'],
                 status='PENDING',
-                price=data.get('price', 0.0)
+                notes=data.get('notes', '')
             )
 
             db.session.add(reservation)
@@ -62,12 +61,11 @@ class ReservationFacade:
             return True, {
                 'id': reservation.id,
                 'venue_id': reservation.venue_id,
-                'user_id': reservation.user_id,
-                'start_time': reservation.start_time.isoformat(),
-                'end_time': reservation.end_time.isoformat(),
+                'customer_id': reservation.customer_id,
+                'reservation_time': reservation.reservation_time.isoformat(),
                 'party_size': reservation.party_size,
-                'status': reservation.status,
-                'price': reservation.price
+                'status': reservation.status.value,
+                'notes': reservation.notes
             }
         except SQLAlchemyError as e:
             db.session.rollback()
@@ -83,33 +81,40 @@ class ReservationFacade:
             if not reservation:
                 return False, "Reservation not found"
 
-            if reservation.user_id != user.id:
-                venue = Venue.query.get(reservation.venue_id)
-                if not venue or venue.owner_id != user.id:
-                    return False, "No permission to update this reservation"
+            # Check if user is the customer or the venue owner
+            is_customer = reservation.customer_id == user.id
+            venue = Venue.query.get(reservation.venue_id)
+            is_owner = venue and venue.owner_id == user.id
+
+            if not (is_customer or is_owner):
+                return False, "No permission to update this reservation"
+
+            # Only owner can update status
+            if 'status' in data and not is_owner:
+                return False, "Only venue owner can update reservation status"
 
             if 'start_time' in data:
-                reservation.start_time = datetime.fromisoformat(data['start_time'])
-            if 'end_time' in data:
-                reservation.end_time = datetime.fromisoformat(data['end_time'])
+                reservation.reservation_time = datetime.fromisoformat(data['start_time'])
             if 'party_size' in data:
                 reservation.party_size = data['party_size']
             if 'status' in data:
-                reservation.status = data['status']
-            if 'price' in data:
-                reservation.price = data['price']
+                try:
+                    reservation.status = ReservationStatus[data['status'].upper()]
+                except KeyError:
+                    return False, f"Invalid status: {data['status']}"
+            if 'notes' in data:
+                reservation.notes = data['notes']
 
             db.session.commit()
 
             return True, {
                 'id': reservation.id,
                 'venue_id': reservation.venue_id,
-                'user_id': reservation.user_id,
-                'start_time': reservation.start_time.isoformat(),
-                'end_time': reservation.end_time.isoformat(),
+                'customer_id': reservation.customer_id,
+                'reservation_time': reservation.reservation_time.isoformat(),
                 'party_size': reservation.party_size,
-                'status': reservation.status,
-                'price': reservation.price
+                'status': reservation.status.value,
+                'notes': reservation.notes
             }
         except SQLAlchemyError as e:
             db.session.rollback()
@@ -125,7 +130,7 @@ class ReservationFacade:
             if not reservation:
                 return False, "Reservation not found"
 
-            if reservation.user_id != user.id:
+            if reservation.customer_id != user.id:
                 venue = Venue.query.get(reservation.venue_id)
                 if not venue or venue.owner_id != user.id:
                     return False, "No permission to delete this reservation"

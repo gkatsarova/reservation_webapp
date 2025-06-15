@@ -23,6 +23,14 @@ def create_app(config_class=Config):
 
     app.register_blueprint(health_bp)
 
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost"}}, supports_credentials=True)
+    CORS(app, 
+         resources={r"/api/*": {
+             "origins": ["http://localhost", "http://localhost:3000"],
+             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+             "allow_headers": ["Content-Type", "Authorization"],
+             "supports_credentials": True
+         }},
+         expose_headers=["Content-Type", "Authorization"]
+    )
 
     return app

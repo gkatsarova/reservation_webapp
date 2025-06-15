@@ -29,7 +29,8 @@ status_model = ns.model('StatusUpdate', {
 
 @ns.route('/')
 class ReservationList(Resource):
-    def __init__(self):
+    def __init__(self, api=None, *args, **kwargs):
+        super().__init__(api, *args, **kwargs)
         self.facade = ReservationFacade()
 
     @ns.doc(security='Bearer')
@@ -41,7 +42,7 @@ class ReservationList(Resource):
         if not user:
             return [], 200
 
-        reservations = self.facade.get_user_reservations(user)
+        reservations = self.facade.get_reservations_for_user(user)
         return reservations, 200
 
     @ns.doc(security='Bearer')
@@ -56,16 +57,20 @@ class ReservationList(Resource):
             return {'message': 'User not found'}, 404
 
         data = request.get_json()
-        success, result = self.facade.create_reservation(user, data)
+        if 'venue_id' not in data:
+            return {'message': 'venue_id is required'}, 400
+
+        success, result = self.facade.create_reservation(user, data['venue_id'], data)
         
         if not success:
             return {'message': result}, 400
             
-        return {'message': 'The reservation has been created', 'id': result.id}, 201
+        return {'message': 'The reservation has been created', 'id': result['id']}, 201
 
 @ns.route('/<int:reservation_id>/status')
 class ReservationStatusUpdate(Resource):
-    def __init__(self):
+    def __init__(self, api=None, *args, **kwargs):
+        super().__init__(api, *args, **kwargs)
         self.facade = ReservationFacade()
 
     @ns.doc(security='Bearer')
@@ -77,8 +82,8 @@ class ReservationStatusUpdate(Resource):
             return {'message': 'User not found'}, 404
 
         data = request.get_json()
-        success, message = self.facade.update_reservation_status(
-            reservation_id, user, data.get('status')
+        success, message = self.facade.update_reservation(
+            reservation_id, user, {'status': data.get('status')}
         )
         
         if not success:
@@ -88,7 +93,8 @@ class ReservationStatusUpdate(Resource):
 
 @ns.route('/venue/<int:venue_id>')
 class VenueReservations(Resource):
-    def __init__(self):
+    def __init__(self, api=None, *args, **kwargs):
+        super().__init__(api, *args, **kwargs)
         self.facade = ReservationFacade()
 
     @ns.doc(security='Bearer')
@@ -108,7 +114,8 @@ class VenueReservations(Resource):
 
 @ns.route('/<int:reservation_id>')
 class ReservationDelete(Resource):
-    def __init__(self):
+    def __init__(self, api=None, *args, **kwargs):
+        super().__init__(api, *args, **kwargs)
         self.facade = ReservationFacade()
 
     @ns.doc(security='Bearer')

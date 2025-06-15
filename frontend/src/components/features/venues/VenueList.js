@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Navbar from './Navbar';
+import Navbar from '../../layout/Navbar';
 import { 
   Box, 
   Typography, 
@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { LocationOn, Phone, ArrowForward } from '@mui/icons-material';
-import { apiClient } from '../api/client';
+import { apiClient } from '../../../api/client';
 import { Link } from 'react-router-dom';
 
 const MotionCard = motion(Card);

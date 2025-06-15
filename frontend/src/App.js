@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
-import Register from './components/Register';
-import Login from './components/Login';
-import VenueList from './components/VenueList';
-import HomePage from './components/HomePage';
-import CreateVenue from './components/CreateVenue';
-import VenueDetails from './components/VenueDetails';
-import ReservationList from './components/ReservationList';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Register from './components/features/auth/Register';
+import Login from './components/features/auth/Login';
+import VenueList from './components/features/venues/VenueList';
+import HomePage from './components/features/home/HomePage';
+import CreateVenue from './components/features/venues/CreateVenue';
+import VenueDetails from './components/features/venues/VenueDetails';
+import ReservationList from './components/features/reservations/ReservationList';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
