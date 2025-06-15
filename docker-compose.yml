@@ -29,7 +29,7 @@ services:
       retries: 3
     ports:
       - "5000:5000" 
-    command: ["sh", "-c", "if [ ! -d \"migrations\" ]; then flask db init; fi && flask db migrate && flask db upgrade && gunicorn --bind 0.0.0.0:5000 \"app:create_app()\""]
+    command: ["sh", "-c", "flask db upgrade && gunicorn --bind 0.0.0.0:5000 app:create_app()"]
   frontend:
     build: ./frontend
     ports:
