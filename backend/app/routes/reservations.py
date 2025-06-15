@@ -50,6 +50,7 @@ class ReservationList(Resource):
     @ns.expect(reservation_model)
     @ns.response(201, 'The reservation has been created')
     @ns.response(400, 'Invalid data')
+    @ns.response(403, 'Venue owners cannot make reservations')
     def post(self):
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
@@ -60,12 +61,12 @@ class ReservationList(Resource):
         if 'venue_id' not in data:
             return {'message': 'venue_id is required'}, 400
 
-        success, result = self.facade.create_reservation(user, data['venue_id'], data)
+        success, result, status_code = self.facade.create_reservation(user, data['venue_id'], data)
         
         if not success:
-            return {'message': result}, 400
+            return {'message': result}, status_code
             
-        return {'message': 'The reservation has been created', 'id': result['id']}, 201
+        return {'message': 'The reservation has been created', 'id': result['id']}, status_code
 
 @ns.route('/<int:reservation_id>/status')
 class ReservationStatusUpdate(Resource):
@@ -129,8 +130,8 @@ class ReservationDelete(Resource):
         if not user:
             return {'message': 'User not found'}, 404
 
-        success, message = self.facade.delete_reservation(reservation_id, user)
+        success, message, status_code = self.facade.delete_reservation(reservation_id, user)
         if not success:
-            return {'message': message}, 403 if 'permission' in message else 404
+            return {'message': message}, status_code
 
-        return {'message': message}, 200
+        return {'message': message}, status_code

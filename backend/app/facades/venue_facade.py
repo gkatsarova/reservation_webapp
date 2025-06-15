@@ -82,6 +82,15 @@ class VenueFacade:
             if not all(k in venue_data for k in ['name', 'address', 'phone', 'weekdays_hours', 'weekend_hours', 'type']):
                 return False, "Missing required fields"
 
+            existing_venue = Venue.query.filter_by(name=venue_data['name']).first()
+            if existing_venue:
+                return False, "Venue with this name already exists"
+
+            if venue_data.get('email'):
+                existing_email = Venue.query.filter_by(email=venue_data['email']).first()
+                if existing_email:
+                    return False, "Venue with this email already exists"
+
             try:
                 venue_type = VenueType(venue_data['type'])
             except ValueError:
@@ -118,18 +127,18 @@ class VenueFacade:
         try:
             venue = Venue.query.get(venue_id)
             if not venue:
-                return False, "Venue not found"
+                return False, "Venue not found", 404
             
-            if venue.owner_id != user.id and user.user_type != UserType.ADMIN:
-                return False, "No permission to delete this venue"
+            if venue.owner_id != user.id:
+                return False, "Do not have permission to delete this venue", 403
 
             db.session.delete(venue)
             db.session.commit()
-            return True, "Venue deleted successfully"
+            return True, "Venue is deleted", 200
         except SQLAlchemyError as e:
             db.session.rollback()
             print(f"Database error deleting venue: {str(e)}")
-            return False, "Database error occurred"
+            return False, "Database error occurred", 500
         except Exception as e:
             print(f"Error deleting venue: {str(e)}")
-            return False, str(e) 
+            return False, str(e), 500 

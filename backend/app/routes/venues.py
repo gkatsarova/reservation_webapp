@@ -132,11 +132,11 @@ class VenueDetail(Resource):
         if not user:
             return {'message': 'User not found'}, 404
 
-        success, message = self.facade.delete_venue(venue_id, user)
+        success, message, status_code = self.facade.delete_venue(venue_id, user)
         if not success:
-            return {'message': message}, 403 if 'permission' in message else 404
+            return {'message': message}, status_code
 
-        return {'message': message}, 200
+        return {'message': message}, status_code
 
 @ns.route('/<int:venue_id>/comments')
 class VenueComments(Resource):
