@@ -1,26 +1,7 @@
 services:
-  db:
-    image: postgres:13-alpine
-    env_file: .env
-    environment:
-      PGDATA: /var/lib/postgresql/data/pgdata
-      RAILWAY_REBUILD: "2023-10-05"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD-SHELL", "exit 0"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   backend:
     build: ./backend
-    env_file: .env
-    depends_on:
-      db:
-        condition: service_healthy
+    env_file: .env 
     networks:
       - app-network
     healthcheck:
@@ -30,8 +11,9 @@ services:
       retries: 6
       start_period: 20s
     ports:
-      - "5000:5000" 
+      - "5000:5000"
     command: ["gunicorn", "--bind", "0.0.0.0:5000", "app:create_app()"]
+    
   frontend:
     build: ./frontend
     ports:
@@ -42,9 +24,6 @@ services:
     networks:
       - app-network
     restart: unless-stopped
-
-volumes:
-  postgres_data:
 
 networks:
   app-network:
